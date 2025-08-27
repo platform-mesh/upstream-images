@@ -27,13 +27,25 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
+      - name: Set versions
+        id: vars
+        run: |
+          IMAGE_VERSION="${{ github.event.inputs.image_version || '25.2.0-debian-12-r0' }}"
+          RELEASE_VERSION="${{ github.event.inputs.release_version || '25.2.0' }}"
+
+          echo "image_version=$IMAGE_VERSION" >> $GITHUB_ENV
+          echo "release_version=$RELEASE_VERSION" >> $GITHUB_ENV
+
+          echo "Using image_version=$IMAGE_VERSION"
+          echo "Using release_version=$RELEASE_VERSION"
+
       - name: Clone Bitnami Docker Keycloak Repo
         run: |
           git clone https://github.com/bitnami/containers.git
           cd containers/bitnami/keycloak
-          git checkout "refs/tags/${{ github.event.inputs.image_version }}" || echo "Using main"
+          git checkout "refs/tags/${{ env.image_version }}" || echo "Using main"
 
       - name: Build Docker Image
         run: |
           cd containers/bitnami/keycloak
-          docker build -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ github.event.inputs.release_version }} .
+          docker build -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.release_version }} .
