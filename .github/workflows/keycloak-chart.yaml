@@ -46,3 +46,25 @@ jobs:
             echo "❌ Tag keycloak/${{ env.chart_version }} not found in bitnami/charts"
             exit 1
           fi
+      - name: Update dependencies
+        working-directory: charts/bitnami/keycloak
+        run: helm dependency update .
+
+      - name: Package chart
+        working-directory: charts/bitnami/keycloak
+        run: |
+                helm package .
+                PACKED=$(ls -1 keycloak-*.tgz | head -n1 || true)
+                if [ -z "$PACKED" ]; then
+                  echo "❌ No packaged chart found"
+                  exit 1
+                fi
+                echo "packaged_chart=$PACKED" >> $GITHUB_ENV
+
+      - name: Login to OCI registry (ghcr.io)
+        run: |
+                echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push chart to OCI registry
+        run: |
+                helm push "${{ env.packaged_chart }}" "oci://ghcr.io/${{ github.repository_owner }}/images/charts"
