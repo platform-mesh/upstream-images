@@ -1,51 +1,85 @@
-# name: Keycloak Image
+name: Keycloak Image Builder
 
-# on:
-#   workflow_dispatch:
-#     inputs:
-#       image_version:
-#         description: 'Bitnami Keycloak image version (e.g. 25.2.0-debian-12-r0)'
-#         required: true
-#         default: '25.2.0-debian-12-r0'
-#       release_version:
-#         description: 'Release version used for tagging (e.g. 25.2.0)'
-#         required: true
-#         default: '25.2.0'
-#   push:
-#     branches:
-#       - main
-#       - feat/**
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: 'Keycloak target version (e.g., 25.0.2)'
+        required: true
+        default: '25.0.2'
+  push:
+    branches:
+      - main
 
-# jobs:
-#   publish-image:
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
+jobs:
+  build-keycloak-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-#       - name: Set versions
-#         id: vars
-#         run: |
-#           IMAGE_VERSION="${{ github.event.inputs.image_version || '25.2.0-debian-12-r0' }}"
-#           RELEASE_VERSION="${{ github.event.inputs.release_version || '25.2.0' }}"
+      - name: Set target version
+        run: |
+          echo "target_version=${{ github.event.inputs.target_version || '24.0.5' }}" >> $GITHUB_ENV
+          echo "Using target_version=${{ env.target_version }}"
 
-#           echo "image_version=$IMAGE_VERSION" >> $GITHUB_ENV
-#           echo "release_version=$RELEASE_VERSION" >> $GITHUB_ENV
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-#           echo "Using image_version=$IMAGE_VERSION"
-#           echo "Using release_version=$RELEASE_VERSION"
+      - name: Clone and build Keycloak image
+        run: |
+          git clone --depth 50 https://github.com/bitnami/containers.git /tmp/containers
+          cd /tmp/containers
+          
+          COMMIT_HASH=$(git log --oneline --grep="keycloak.*Release.*${{ env.target_version }}" | head -n 1 | cut -d' ' -f1)
+          
+          if [ -z "$COMMIT_HASH" ]; then
+            echo "Error: Could not find commit for version ${{ env.target_version }}"
+            exit 1
+          fi
+          
+          echo "Found commit: $COMMIT_HASH"
+          
+          git checkout $COMMIT_HASH
+          
+          cd bitnami/keycloak
+          
+          MAJOR_VERSION=$(echo "${{ env.target_version }}" | cut -d. -f1)
+          VERSION_DIR=$(find . -maxdepth 1 -type d -name "${MAJOR_VERSION}*" | head -n 1)
+          
+          if [ -z "$VERSION_DIR" ]; then
+            echo "Error: Could not find version directory for ${{ env.target_version }}"
+            exit 1
+          fi
+          
+          echo "Found version directory: $VERSION_DIR"
+          cd "$VERSION_DIR"
+          
+          DEBIAN_DIR=$(find . -maxdepth 1 -type d -name "debian*" | head -n 1)
+          
+          if [ -z "$DEBIAN_DIR" ]; then
+            echo "Error: Could not find Debian directory"
+            exit 1
+          fi
+          
+          echo "Found Debian directory: $DEBIAN_DIR"
+          cd "$DEBIAN_DIR"
+          
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.target_version }} \
+            -t ghcr.io/${{ github.repository_owner }}/keycloak:latest \
+            .
+          
+          docker push ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.target_version }}
+          docker push ghcr.io/${{ github.repository_owner }}/keycloak:latest
 
-#       - name: Clone Bitnami Docker Keycloak Repo
-#         run: |
-#           git clone https://github.com/bitnami/containers.git
-#           cd containers/bitnami/keycloak
-#           git checkout "refs/tags/${{ env.image_version }}" || echo "Using main"
-
-#       - name: Build Docker Image
-#         run: |
-#           cd containers/bitnami/keycloak
-#           docker build -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.release_version }} .
+      - name: Cleanup
+        run: rm -rf /tmp/containers
