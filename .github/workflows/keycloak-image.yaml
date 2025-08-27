@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       image_version:
-        description: 'Bitnami Keycloak image version (e.g. 24.0.1-debian-12-r0)'
+        description: 'Bitnami Keycloak image version (e.g. 25.2.0-debian-12-r0)'
         required: true
         default: '25.2.0-debian-12-r0'
+      release_version:
+        description: 'Release version used for tagging (e.g. 25.2.0)'
+        required: true
+        default: '25.2.0'
   push:
     branches:
       - main
@@ -32,4 +36,4 @@ jobs:
       - name: Build Docker Image
         run: |
           cd containers/bitnami/keycloak
-          docker build -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ github.event.inputs.image_version }} .
+          docker build -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ github.event.inputs.release_version }} .
