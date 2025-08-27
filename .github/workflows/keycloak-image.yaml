@@ -100,12 +100,9 @@ jobs:
           echo "Building Docker image from $(pwd)..."
           
           docker build \
-            -t ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.target_version }} \
-            -t ghcr.io/${{ github.repository_owner }}/keycloak:latest \
-            .
+            -t ghcr.io/${{ github.repository_owner }}/images/images/keycloak:${{ env.target_version }} .
           
-          docker push ghcr.io/${{ github.repository_owner }}/keycloak:${{ env.target_version }}
-          docker push ghcr.io/${{ github.repository_owner }}/keycloak:latest
+          docker push ghcr.io/${{ github.repository_owner }}/images/images/keycloak:${{ env.target_version }}
 
       - name: Cleanup
         run: rm -rf /tmp/bitnami-containers
