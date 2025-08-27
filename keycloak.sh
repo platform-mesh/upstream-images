@@ -28,26 +28,6 @@ echo "Searching for commit with version ${TARGET_VERSION}..."
 # Try different search patterns
 COMMIT_HASH=$(git log --oneline --grep="keycloak.*${TARGET_VERSION}" --all | head -n 1 | cut -d' ' -f1)
 
-if [[ -z "${COMMIT_HASH}" ]]; then
-    echo "Trying alternative search pattern..."
-    COMMIT_HASH=$(git log --oneline --grep="${TARGET_VERSION}" --all | grep -i keycloak | head -n 1 | cut -d' ' -f1)
-fi
-
-if [[ -z "${COMMIT_HASH}" ]]; then
-    echo "Trying broader search..."
-    COMMIT_HASH=$(git log --oneline --all | grep -i "${TARGET_VERSION}" | grep -i keycloak | head -n 1 | cut -d' ' -f1)
-fi
-
-if [[ -z "${COMMIT_HASH}" ]]; then
-    echo "Error: Could not find commit for version ${TARGET_VERSION}"
-    echo "Available Keycloak releases:"
-    git log --oneline --grep="keycloak" --all | head -20
-    echo ""
-    echo "Trying to find any version close to ${TARGET_VERSION}..."
-    git log --oneline --all | grep -i keycloak | grep -E "[0-9]+\.[0-9]+\.[0-9]+" | head -20
-    exit 1
-fi
-
 echo "Found commit: ${COMMIT_HASH}"
 echo "Commit message: $(git log --format=%B -n 1 ${COMMIT_HASH})"
 
