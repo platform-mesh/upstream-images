@@ -1,0 +1,48 @@
+name: Keycloak Chart
+
+on:
+  workflow_dispatch:
+    inputs:
+      chart_version:
+        description: 'Bitnami Keycloak chart version (e.g. 24.0.1)'
+        required: true
+        default: '24.0.1'
+  push:
+    branches:
+      - main
+      - feat/**
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish-chart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo (workflow)
+        uses: actions/checkout@v4
+
+      - name: Set chart version
+        id: vars
+        run: |
+          CHART_VERSION="${{ github.event.inputs.chart_version || '24.0.1' }}"
+          echo "chart_version=$CHART_VERSION" >> $GITHUB_ENV
+          echo "Using Bitnami Keycloak chart version=$CHART_VERSION"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Clone Bitnami Charts Repo
+        run: |
+          git clone https://github.com/bitnami/charts.git
+          cd charts/bitnami/keycloak
+          git fetch --tags
+          if git rev-parse "refs/tags/keycloak/${{ env.chart_version }}" >/dev/null 2>&1; then
+            git checkout "refs/tags/keycloak/${{ env.chart_version }}"
+            echo "✅ Checked out tag keycloak/${{ env.chart_version }}"
+          else
+            echo "❌ Tag keycloak/${{ env.chart_version }} not found in bitnami/charts"
+            exit 1
+          fi
