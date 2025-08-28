@@ -16,7 +16,7 @@ apiVersion: v2
 appVersion: 17.6.0
 dependencies:
 - name: common
-  repository: oci://ghcr.io/platform-mesh/images/charts
+  repository: oci://ghcr.io/platform-mesh/images/bitnami-charts
   tags:
   - bitnami-common
   version: 2.x.x
