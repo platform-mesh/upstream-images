@@ -80,8 +80,8 @@ diagnosticMode:
 ## @param image.debug Specify if debug logs should be enabled
 ##
 image:
-  registry: docker.io
-  repository: bitnami/mysql
+  registry: ghcr.io/platform-mesh/images/bitnami-images
+  repository: mysql
   tag: 8.0.32-debian-11-r14
   digest: ""
   ## Specify a imagePullPolicy

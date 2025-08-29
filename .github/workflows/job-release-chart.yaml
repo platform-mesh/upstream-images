@@ -1,0 +1,100 @@
+name: Release
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+      chartFolder:
+        required: false
+        type: string
+        default: 'chart'
+      release_branch:
+        required: false
+        type: string
+        default: 'main'
+      publishCRDChart:
+        required: false
+        type: boolean
+        default: false
+      crdChartPath:
+        required: false
+        type: string
+        default: 'charts/crds'
+      updateImageTag:
+        required: false
+        type: boolean
+        default: false
+      updateVersion:
+        required: false
+        type: boolean
+        default: true
+      pushTags:
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      version:
+        description: The chart version that was pushed
+        value: ${{ jobs.release.outputs.version }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ (github.head_ref || github.ref) == format('refs/heads/{0}',inputs.release_branch) }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Setup yq@latest
+        if: ${{ inputs.updateVersion }}
+        run: |
+          if ! command -v yq &>/dev/null
+          then
+            mkdir -p /home/runner/.local/bin
+            wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /home/runner/.local/bin/yq &&\
+              chmod +x /home/runner/.local/bin/yq
+          fi
+      - name: Update Chart version
+        if: ${{ inputs.updateVersion }}
+        run: |
+          yq e -i '.version = "${{ inputs.version }}"' ${{ inputs.chartFolder }}/Chart.yaml
+      - name: Update Image Tag
+        if: ${{ inputs.updateImageTag && inputs.updateVersion }}
+        run: |
+          yq e -i '.image.tag = "${{ inputs.version }}"' ${{ inputs.chartFolder }}/values.yaml
+      - name: Retrieve helm chart version
+        id: chart_version
+        run: echo "version=$(yq '.version' ${{ inputs.chartFolder }}/Chart.yaml)" >> $GITHUB_OUTPUT
+      - name: Push Helm chart
+        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
+        with:
+          useOCIRegistry: true
+          username: ${{ github.actor }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-url:  oci://ghcr.io/${{ github.repository }}
+          chart-folder: ${{ inputs.chartFolder }}
+      - name: Update CRD Chart version
+        if: ${{ inputs.publishCRDChart && inputs.updateVersion }}
+        run: |
+          yq e -i '.version = "${{ inputs.version }}"' ${{ inputs.chartFolder }}/${{ inputs.crdChartPath }}/Chart.yaml
+      - name: Push CRD Helm chart
+        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
+        if: ${{ inputs.publishCRDChart }}
+        with:
+          useOCIRegistry: true
+          username: ${{ github.actor }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-url:  oci://ghcr.io/${{ github.repository }}
+          chart-folder: ${{ inputs.chartFolder }}/${{ inputs.crdChartPath }}
+      - name: Create Release
+        if: ${{ inputs.pushTags }}
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # v1.18.0
+        with:
+          allowUpdates: true
+          draft: false
+          makeLatest: true
+          generateReleaseNotes: true
+          tag: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      version: ${{ steps.chart_version.outputs.version }}
