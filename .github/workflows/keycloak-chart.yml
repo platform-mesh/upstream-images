@@ -27,12 +27,12 @@ jobs:
     secrets: inherit
 
   ocm:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    # if: ${{ github.ref == 'refs/heads/main' }}
     needs: [pipeline]
     uses: platform-mesh/.github/.github/workflows/job-ocm.yml@main
     secrets: inherit
     with:
       chartPath: charts/keycloak/24.8.1
-      componentName: github.com/platform-mesh/keycloak
+      componentName: github.com/platform-mesh/keycloak-test
       componentConstructorFile: .ocm/component-constructor-chart-only.yaml
       ocmRegistryUrl: ghcr.io/openmfp/ocm
