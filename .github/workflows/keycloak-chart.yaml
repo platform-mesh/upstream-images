@@ -1,71 +1,37 @@
-name: Keycloak Chart
-
+name: Build key-cloak-chart Workflow
 on:
-  workflow_dispatch:
-    inputs:
-      chart_version:
-        description: 'Bitnami Keycloak chart version (e.g. 24.0.1)'
-        required: true
-        default: '24.0.1'
   push:
     branches:
       - main
-      # - feat/**
-
-permissions:
-  contents: read
-  packages: write
+    paths:
+      - 'charts/keycloak/**'
+      - '.github/keycloak-chart.yaml'
+      - '.ocm/component-constructor-chart-only.yaml'
+  pull_request:
+    paths:
+      - 'charts/keycloak/**'
+      - '.github/workflows/keycloak-chart.yaml'
 
 jobs:
-  publish-chart:
-    runs-on: ubuntu-latest
+  pipeline:
+    concurrency:
+      group: keycloak-${{ github.ref }}
+      cancel-in-progress: true
+    uses: ./.github/workflows/pipeline-chart.yaml
+    with:
+      chartFolder: charts
+      chartName: keycloak/24.8.1
+      additionalTestFilesCommand: ''
+      chartRepos: 'bitnami=https://charts.bitnami.com/bitnami,openfga=https://openfga.github.io/helm-charts'
+    secrets: inherit
 
-    steps:
-      - name: Checkout repo (workflow)
-        uses: actions/checkout@v4
-
-      - name: Set chart version
-        id: vars
-        run: |
-          CHART_VERSION="${{ github.event.inputs.chart_version || '24.0.1' }}"
-          echo "chart_version=$CHART_VERSION" >> $GITHUB_ENV
-          echo "Using Bitnami Keycloak chart version=$CHART_VERSION"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-
-      - name: Clone Bitnami Charts Repo
-        run: |
-          git clone https://github.com/bitnami/charts.git
-          cd charts/bitnami/keycloak
-          git fetch --tags
-          if git rev-parse "refs/tags/keycloak/${{ env.chart_version }}" >/dev/null 2>&1; then
-            git checkout "refs/tags/keycloak/${{ env.chart_version }}"
-            echo "✅ Checked out tag keycloak/${{ env.chart_version }}"
-          else
-            echo "❌ Tag keycloak/${{ env.chart_version }} not found in bitnami/charts"
-            exit 1
-          fi
-      - name: Update dependencies
-        working-directory: charts/bitnami/keycloak
-        run: helm dependency update .
-
-      - name: Package chart
-        working-directory: charts/bitnami/keycloak
-        run: |
-          helm package .
-          PACKED=$(ls -1 keycloak-*.tgz | head -n1 || true)
-          if [ -z "$PACKED" ]; then
-            echo "❌ No packaged chart found"
-            exit 1
-          fi
-          echo "packaged_chart=$(pwd)/$PACKED" >> $GITHUB_ENV
-          echo "✅ Packaged chart: $PACKED"
-
-      - name: Login to OCI registry (ghcr.io)
-        run: |
-                echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Push chart to OCI registry
-        run: |
-                helm push "${{ env.packaged_chart }}" "oci://ghcr.io/${{ github.repository_owner }}/images/charts"
+  ocm:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [pipeline]
+    uses: platform-mesh/.github/.github/workflows/job-ocm.yml@main
+    secrets: inherit
+    with:
+      chartPath: charts/keycloak/24.8.1
+      componentName: github.com/platform-mesh/keycloak
+      componentConstructorFile: .ocm/component-constructor-chart-only.yaml
+      ocmRegistryUrl: ghcr.io/openmfp/ocm
