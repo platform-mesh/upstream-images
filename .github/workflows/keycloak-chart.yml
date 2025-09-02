@@ -6,18 +6,18 @@ on:
     paths:
       - 'charts/keycloak/**'
       - '.github/keycloak-chart.yaml'
-      - '.ocm/component-constructor-chart-only.yaml'
+      - '.ocm/component-constructor-chart-only.yml'
   pull_request:
     paths:
       - 'charts/keycloak/**'
-      - '.github/workflows/keycloak-chart.yaml'
+      - '.github/workflows/keycloak-chart.yml'
 
 jobs:
   pipeline:
     concurrency:
       group: keycloak-${{ github.ref }}
       cancel-in-progress: true
-    uses: ./.github/workflows/pipeline-chart.yaml
+    uses: ./.github/workflows/pipeline-chart.yml
     with:
       chartFolder: charts
       chartName: keycloak/24.8.1
