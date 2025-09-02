@@ -6,7 +6,7 @@ on:
       - feat/**
     paths:
       - 'charts/keycloak/**'
-      - '.github/workflows/keycloak-chart.yaml'
+      - '.github/workflows/keycloak-chart.yml'
       - '.ocm/component-constructor-chart-only.yml'
   pull_request:
     paths:
