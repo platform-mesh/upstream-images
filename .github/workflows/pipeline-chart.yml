@@ -32,7 +32,7 @@ on:
   push:
     branches:
       - main
-      - feat/**
+      # - feat/**
 
 jobs:
   # testChart:
