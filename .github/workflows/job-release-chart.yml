@@ -41,7 +41,6 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ (github.head_ref || github.ref) == format('refs/heads/{0}',inputs.release_branch) }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Setup yq@latest

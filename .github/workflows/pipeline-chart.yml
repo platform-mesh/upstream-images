@@ -29,10 +29,6 @@ on:
       version:
         description: "The created Version"
         value: ${{ jobs.release.outputs.version }}
-  push:
-    branches:
-      - main
-      # - feat/**
 
 jobs:
   # testChart:
@@ -52,7 +48,7 @@ jobs:
 
   release:
     # needs: [testChart,checkHelmDocs]
-    uses: platform-mesh/.github/.github/workflows/job-release-chart.yml@main
+    uses: ./.github/workflows/job-release-chart.yml
     secrets: inherit
     with:
       updateVersion: false
