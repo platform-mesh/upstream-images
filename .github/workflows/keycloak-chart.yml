@@ -3,15 +3,15 @@ on:
   push:
     branches:
       - main
-      - feat/bitnami-workflows
+      - feat/**
     paths:
       - 'charts/keycloak/**'
-      - '.github/keycloak-chart.yaml'
+      - '.github/workflows/keycloak-chart.yaml'
       - '.ocm/component-constructor-chart-only.yml'
   pull_request:
-    # paths:
-    #   - 'charts/keycloak/**'
-    #   - '.github/workflows/keycloak-chart.yml'
+    paths:
+      - 'charts/keycloak/**'
+      - '.github/workflows/keycloak-chart.yml'
 
 jobs:
   pipeline:
