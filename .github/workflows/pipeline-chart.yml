@@ -52,7 +52,7 @@ jobs:
 
   release:
     # needs: [testChart,checkHelmDocs]
-    uses: platform-mesh/.github/.github/workflows/job-release-chart.yml
+    uses: platform-mesh/.github/.github/workflows/job-release-chart.yml@main
     secrets: inherit
     with:
       updateVersion: false
