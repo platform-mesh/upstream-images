@@ -35,4 +35,4 @@ jobs:
       chartPath: charts/keycloak/24.8.1
       componentName: github.com/platform-mesh/keycloak-test
       componentConstructorFile: .ocm/component-constructor-chart-only.yaml
-      ocmRegistryUrl: ghcr.io/openmfp/ocm
+      ocmRegistryUrl: ghcr.io/platform-mesh/images
