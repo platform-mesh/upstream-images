@@ -1,0 +1,38 @@
+name: Build key-cloak-chart Workflow
+on:
+  push:
+    branches:
+      - main
+      - feat/**
+    paths:
+      - 'charts/openfga/**'
+      - '.github/workflows/openfga-chart.yml'
+      - '.ocm/component-constructor-chart-only.yml'
+  pull_request:
+    paths:
+      - 'charts/openfga/**'
+      - '.github/workflows/openfga-chart.yml'
+
+jobs:
+  pipeline:
+    concurrency:
+      group: openfga-${{ github.ref }}
+      cancel-in-progress: true
+    uses: ./.github/workflows/pipeline-chart.yml
+    with:
+      chartFolder: charts
+      chartName: openfga
+      additionalTestFilesCommand: ''
+      chartRepos: 'bitnami=https://charts.bitnami.com/bitnami,openfga=https://openfga.github.io/helm-charts'
+    secrets: inherit
+
+  ocm:
+    # if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [pipeline]
+    uses: platform-mesh/.github/.github/workflows/job-ocm.yml@main
+    secrets: inherit
+    with:
+      chartPath: charts/openfga
+      componentName: github.com/platform-mesh/openfga
+      componentConstructorFile: .ocm/component-constructor-chart-only.yaml
+      ocmRegistryUrl: ghcr.io/platform-mesh/images
