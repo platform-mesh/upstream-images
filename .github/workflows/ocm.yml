@@ -7,7 +7,7 @@ on:
       - main
       - feat/**
     paths:
-      - '.github/workflows/ocm.yaml'
+      - '.github/workflows/ocm.yml'
       - 'constructor/component-constructor.yaml'
 permissions:
   packages: write
