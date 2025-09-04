@@ -29,7 +29,7 @@ jobs:
   ocm:
     # if: ${{ github.ref == 'refs/heads/main' }}
     needs: [pipeline]
-    uses: platform-mesh/.github/.github/workflows/job-ocm.yml@main
+    uses: ./.github/workflows/job-ocm.yml
     secrets: inherit
     with:
       chartPath: charts/openfga
