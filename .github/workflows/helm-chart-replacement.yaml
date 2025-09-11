@@ -9,7 +9,7 @@ on:
         required: true
       ghcr_namespace:
         description: "Base GHCR namespace (for images and charts)"
-        default: " ghcr.io/platform-mesh/images"
+        default: "ghcr.io/platform-mesh/images"
         required: true
       workdir:
         description: "Working directory for cloned charts"
@@ -23,7 +23,7 @@ on:
     branches:
       - feat/**
     paths:
-      - '.github/workflows/helm-chart-replacement.yaml'
+      - ".github/workflows/helm-chart-replacement.yaml"
 
 env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
@@ -39,7 +39,7 @@ jobs:
     name: Setup Environment
     runs-on: ubuntu-latest
     outputs:
-      chart_tag: ${{ github.event.inputs.chart_tag }}
+      chart_tag: ${{ env.CHART_TAG }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,17 +75,17 @@ jobs:
 
       - id: clone
         run: |
-          mkdir -p "${{ github.event.inputs.workdir }}"
-          tool=$(echo "${{ needs.setup.outputs.chart_tag }}" | cut -d/ -f1)
-          version=$(echo "${{ needs.setup.outputs.chart_tag }}" | cut -d/ -f2)
-          chart_path="${{ github.event.inputs.workdir }}/${tool}"
+          mkdir -p "${{ env.WORKDIR }}"
+          tool=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f1)
+          version=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f2)
+          chart_path="${{ env.WORKDIR }}/${tool}"
           rm -rf "${chart_path}"
           git init "${chart_path}"
-          git -C "${chart_path}" remote add origin "${{ github.event.inputs.bitnami_repo }}"
+          git -C "${chart_path}" remote add origin "${{ env.BITNAMI_REPO }}"
           git -C "${chart_path}" config core.sparseCheckout true
           echo "bitnami/${tool}" > "${chart_path}/.git/info/sparse-checkout"
-          git -C "${chart_path}" fetch --depth 1 origin "refs/tags/${{ needs.setup.outputs.chart_tag }}:refs/tags/${{ needs.setup.outputs.chart_tag }}"
-          git -C "${chart_path}" checkout "tags/${{ needs.setup.outputs.chart_tag }}"
+          git -C "${chart_path}" fetch --depth 1 origin "refs/tags/${{ env.CHART_TAG }}:refs/tags/${{ env.CHART_TAG }}"
+          git -C "${chart_path}" checkout "tags/${{ env.CHART_TAG }}"
           if [[ -d "${chart_path}/bitnami/${tool}" ]]; then
             mv "${chart_path}/bitnami/${tool}"/* "${chart_path}/"
             rm -rf "${chart_path}/bitnami"
@@ -113,14 +113,14 @@ jobs:
             tag=$(yq eval ".. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.tag" "${chart_path}/values.yaml")
             img="${repo}:${tag}"
             basename=$(basename "${repo}")
-            target="${{ github.event.inputs.ghcr_namespace }}/${basename}:${tag}"
+            target="${{ env.GHCR_NAMESPACE }}/${basename}:${tag}"
 
             docker pull "$img"
             docker tag "$img" "$target"
             docker push "$target"
 
             yq eval --inplace "
-              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.registry) = \"${{ github.event.inputs.ghcr_namespace }}\" |
+              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.registry) = \"${{ env.GHCR_NAMESPACE }}\" |
               (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.repository) = \"${basename}\"
             " "${chart_path}/values.yaml"
           done
