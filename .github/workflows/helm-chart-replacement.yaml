@@ -19,6 +19,11 @@ on:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
         default: "nginx/15.2.1"
         required: true
+  push:
+    branches:
+      - feat/**
+    paths:
+      - '.github/workflows/helm-chart-replacement.yaml'
 
 env:
   IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace }}
