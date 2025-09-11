@@ -176,29 +176,62 @@ jobs:
           path: ${{ env.WORKDIR }}
 
       - name: Update chart dependencies
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_PAT: ${{ secrets.GITHUB_TOKEN }}
+          CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
         run: |
           chart_path="${{ needs.retag-images.outputs.chart_path }}"
           chart_yaml="${chart_path}/Chart.yaml"
           chart_lock="${chart_path}/Chart.lock"
 
           if [[ ! -f "${chart_lock}" ]]; then
-            echo "No Chart.lock found, skipping dependency update."
+            echo "[WARN] No Chart.lock found, skipping dependency update." >&2
             exit 0
           fi
 
+          echo "[INFO] Logging in to GHCR..."
+          if ! echo "$GHCR_PAT" | helm registry login "$CHART_NAMESPACE" --username "$GHCR_USER" --password-stdin; then
+            echo "[ERROR] Failed to login to GHCR" >&2
+            exit 1
+          fi
+
           dep_count=$(yq eval '.dependencies | length' "${chart_lock}")
+          missing_deps=()
+
           for i in $(seq 0 $((dep_count - 1))); do
             name=$(yq eval ".dependencies[${i}].name" "${chart_lock}")
             repo=$(yq eval ".dependencies[${i}].repository" "${chart_lock}")
             version=$(yq eval ".dependencies[${i}].version" "${chart_lock}")
 
             if [[ "$repo" == *"bitnami"* ]]; then
-              dep_repo="oci://${{ env.CHART_NAMESPACE }}"
+              dep_repo="oci://${CHART_NAMESPACE}"
+              dep_target="${dep_repo}/${name}:${version}"
+
+              echo "[INFO] Updating dependency ${name} -> repository: ${dep_repo}, version: ${version}"
+
+              # Update Chart.yaml with exact repo/version
               yq eval --inplace "
-                .dependencies[] |= (select(.name == \"${name}\") | .repository = \"${dep_repo}\" | .version = \"${version}\")
+              .dependencies[] |= (select(.name == \"${name}\") | .repository = \"${dep_repo}\" | .version = \"${version}\")
               " "${chart_yaml}"
+
+              # Check if chart exists in GHCR
+              if ! helm pull "$dep_target" --destination /tmp >/dev/null 2>&1; then
+                echo "[WARN] Chart not found in registry: ${dep_target}"
+                missing_deps+=("${name}:${version}")
+              else
+                echo "[INFO] Chart exists in registry: ${dep_target}"
+              fi
             fi
           done
+
+          if [[ ${#missing_deps[@]} -gt 0 ]]; then
+            echo "[ERROR] The following charts must be built/pushed first:" >&2
+            for dep in "${missing_deps[@]}"; do
+              echo "  - ${dep}" >&2
+            done
+            exit 1
+          fi
 
       - name: Upload updated chart
         uses: actions/upload-artifact@v4
