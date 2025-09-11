@@ -123,6 +123,9 @@ jobs:
           name: chart
           path: ${{ env.WORKDIR }}
 
+      - name: Docker login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Retag & push Bitnami images
         run: |
           chart_path="${{ needs.clone-chart.outputs.chart_path }}"
