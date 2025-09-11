@@ -218,6 +218,9 @@ jobs:
         with:
           name: chart
           path: ${{ env.WORKDIR }}
+      
+      - name: Helm login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Package and push chart
         run: |
