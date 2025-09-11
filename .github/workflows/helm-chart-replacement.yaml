@@ -1,0 +1,176 @@
+name: Publish Bitnami Helm Chart
+
+on:
+  workflow_dispatch:
+    inputs:
+      bitnami_repo:
+        description: "Bitnami charts repository"
+        default: "https://github.com/bitnami/charts.git"
+        required: true
+      ghcr_namespace:
+        description: "Base GHCR namespace (for images and charts)"
+        default: " ghcr.io/platform-mesh/images"
+        required: true
+      workdir:
+        description: "Working directory for cloned charts"
+        default: "./charts-workdir"
+        required: true
+      chart_tag:
+        description: "Chart tag to process (e.g. nginx/15.2.1)"
+        default: "nginx/15.2.1"
+        required: true
+
+env:
+  IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace }}
+  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace }}/charts
+  DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace }}/charts/__CHART__
+
+jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      chart_tag: ${{ github.event.inputs.chart_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yq
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Install Helm 3.17.2
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
+          tar -xzf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          rm -rf linux-amd64 helm.tar.gz
+          helm version
+
+      - name: Docker login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Helm login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+  clone-chart:
+    name: Clone Chart
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      chart_path: ${{ steps.clone.outputs.chart_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: clone
+        run: |
+          mkdir -p "${{ github.event.inputs.workdir }}"
+          tool=$(echo "${{ needs.setup.outputs.chart_tag }}" | cut -d/ -f1)
+          version=$(echo "${{ needs.setup.outputs.chart_tag }}" | cut -d/ -f2)
+          chart_path="${{ github.event.inputs.workdir }}/${tool}"
+          rm -rf "${chart_path}"
+          git init "${chart_path}"
+          git -C "${chart_path}" remote add origin "${{ github.event.inputs.bitnami_repo }}"
+          git -C "${chart_path}" config core.sparseCheckout true
+          echo "bitnami/${tool}" > "${chart_path}/.git/info/sparse-checkout"
+          git -C "${chart_path}" fetch --depth 1 origin "refs/tags/${{ needs.setup.outputs.chart_tag }}:refs/tags/${{ needs.setup.outputs.chart_tag }}"
+          git -C "${chart_path}" checkout "tags/${{ needs.setup.outputs.chart_tag }}"
+          if [[ -d "${chart_path}/bitnami/${tool}" ]]; then
+            mv "${chart_path}/bitnami/${tool}"/* "${chart_path}/"
+            rm -rf "${chart_path}/bitnami"
+          fi
+          echo "chart_path=${chart_path}" >> $GITHUB_OUTPUT
+
+  retag-images:
+    name: Retag and Push Images
+    runs-on: ubuntu-latest
+    needs: clone-chart
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Retag & push Bitnami images
+        run: |
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
+          repos=$(yq eval '.. | select(has("image")) | .image.repository' "${chart_path}/values.yaml" | grep "bitnami" || true)
+
+          if [[ -z "$repos" ]]; then
+            echo "No bitnami images found"
+            exit 0
+          fi
+
+          for repo in $repos; do
+            tag=$(yq eval ".. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.tag" "${chart_path}/values.yaml")
+            img="${repo}:${tag}"
+            basename=$(basename "${repo}")
+            target="${{ github.event.inputs.ghcr_namespace }}/${basename}:${tag}"
+
+            docker pull "$img"
+            docker tag "$img" "$target"
+            docker push "$target"
+
+            yq eval --inplace "
+              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.registry) = \"${{ github.event.inputs.ghcr_namespace }}\" |
+              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.repository) = \"${basename}\"
+            " "${chart_path}/values.yaml"
+          done
+
+  update-deps:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    needs: retag-images
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update chart dependencies
+        run: |
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
+          chart_yaml="${chart_path}/Chart.yaml"
+          chart_lock="${chart_path}/Chart.lock"
+
+          if [[ ! -f "${chart_lock}" ]]; then
+            echo "No Chart.lock found, skipping dependency update."
+            exit 0
+          fi
+
+          dep_count=$(yq eval '.dependencies | length' "${chart_lock}")
+          for i in $(seq 0 $((dep_count - 1))); do
+            name=$(yq eval ".dependencies[${i}].name" "${chart_lock}")
+            repo=$(yq eval ".dependencies[${i}].repository" "${chart_lock}")
+            version=$(yq eval ".dependencies[${i}].version" "${chart_lock}")
+
+            if [[ "$repo" == *"bitnami"* ]]; then
+              dep_repo="oci://${{ env.CHART_NAMESPACE }}"
+              yq eval --inplace "
+                .dependencies[] |= (select(.name == \"${name}\") | .repository = \"${dep_repo}\" | .version = \"${version}\")
+              " "${chart_yaml}"
+            fi
+          done
+
+  package-push-chart:
+    name: Package & Push Chart
+    runs-on: ubuntu-latest
+    needs: update-deps
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package and push chart
+        run: |
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
+          chart_yaml="${chart_path}/Chart.yaml"
+
+          name=$(yq eval '.name' "${chart_yaml}")
+          version=$(yq eval '.version' "${chart_yaml}")
+          target="oci://${{ env.CHART_NAMESPACE }}"
+
+          rm -f "${chart_path}/Chart.lock"
+          helm dependency build "${chart_path}"
+
+          tmpdir=$(mktemp -d)
+          tgz="${tmpdir}/${name}-${version}.tgz"
+
+          helm package "${chart_path}" --destination "${tmpdir}"
+          helm push "${tgz}" "${target}"
+
+          rm -rf "${tmpdir}"
