@@ -90,6 +90,10 @@ jobs:
             mv "${chart_path}/bitnami/${tool}"/* "${chart_path}/"
             rm -rf "${chart_path}/bitnami"
           fi
+
+          ls -R "${chart_path}"  
+          test -f "${chart_path}/values.yaml" || (echo "values.yaml not found in ${chart_path}" && exit 1)
+
           echo "chart_path=${chart_path}" >> $GITHUB_OUTPUT
 
   retag-images:
