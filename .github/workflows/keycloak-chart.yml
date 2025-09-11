@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - feat/**
+      # - feat/**
     paths:
       - 'charts/keycloak/**'
       - '.github/workflows/keycloak-chart.yml'
