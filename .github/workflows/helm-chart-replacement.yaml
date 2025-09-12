@@ -48,7 +48,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq yq
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
       - name: Install Helm 3.17.2
         run: |
@@ -244,33 +243,24 @@ jobs:
           name: chart
           path: ${{ env.WORKDIR }}
 
-      - name: Create Github App Token
-        id: app-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: "1415820"
-          private-key: ${{ secrets.PM_PUBLISHER_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-      
-      - name: Helm login to GHCR
-        run: echo "${{ steps.app-token.outputs.token }}" | helm registry login ghcr.io -u github-app --password-stdin
-
-      - name: Package and push chart
+      - name: Rebuild Helm dependencies
         run: |
           chart_path="${{ needs.update-deps.outputs.chart_path }}"
-          chart_yaml="${chart_path}/Chart.yaml"
-
-          name=$(yq eval '.name' "${chart_yaml}")
-          version=$(yq eval '.version' "${chart_yaml}")
-          target="oci://${{ env.CHART_NAMESPACE }}"
-
           rm -f "${chart_path}/Chart.lock"
           helm dependency build "${chart_path}"
 
+      - name: Package Helm chart
+        run: |
+          chart_path="${{ needs.update-deps.outputs.chart_path }}"
           tmpdir=$(mktemp -d)
-          tgz="${tmpdir}/${name}-${version}.tgz"
-
           helm package "${chart_path}" --destination "${tmpdir}"
-          helm push "${tgz}" "${target}"
+          echo "PACKAGED_CHART_DIR=${tmpdir}" >> $GITHUB_ENV
 
-          rm -rf "${tmpdir}"
+      - name: Push Helm chart to GHCR
+        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
+        with:
+          useOCIRegistry: true
+          username: ${{ github.actor }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-url: oci://ghcr.io/platform-mesh/images/bitnami-charts
+          chart-folder: ${{ env.PACKAGED_CHART_DIR }}
