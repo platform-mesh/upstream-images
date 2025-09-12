@@ -40,6 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chart_tag: ${{ env.CHART_TAG }}
+      token: ${{ steps.app-token.outputs.token }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -255,6 +256,6 @@ jobs:
         with:
           useOCIRegistry: true
           username: ${{ github.actor }}
-          access-token: ${{ secrets.GITHUB_TOKEN }}
+          access-token: ${{ needs.setup.outputs.token }}
           registry-url: oci://${{ env.CHART_NAMESPACE }}
           chart-folder: ${{ env.CHART_PATH }}
