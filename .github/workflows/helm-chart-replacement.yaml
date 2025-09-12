@@ -248,13 +248,7 @@ jobs:
           chart_path="${{ needs.update-deps.outputs.chart_path }}"
           rm -f "${chart_path}/Chart.lock"
           helm dependency build "${chart_path}"
-
-      - name: Package Helm chart
-        run: |
-          chart_path="${{ needs.update-deps.outputs.chart_path }}"
-          tmpdir=$(mktemp -d)
-          tgz=$(helm package "${chart_path}" --destination "${tmpdir}" | awk '{print $NF}')
-          echo "PACKAGED_CHART_TGZ=${tgz}" >> $GITHUB_ENV
+          echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
 
       - name: Push Helm chart to GHCR
         uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
@@ -263,4 +257,4 @@ jobs:
           username: ${{ github.actor }}
           access-token: ${{ secrets.GITHUB_TOKEN }}
           registry-url: oci://ghcr.io/platform-mesh/images/bitnami-charts
-          chart-folder: ${{ env.PACKAGED_CHART_TGZ }}
+          chart-folder: ${{ env.CHART_PATH }}
