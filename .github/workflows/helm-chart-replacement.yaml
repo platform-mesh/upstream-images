@@ -255,5 +255,5 @@ jobs:
           useOCIRegistry: true
           username: ${{ github.actor }}
           access-token: ${{ secrets.GITHUB_TOKEN }}
-          registry-url: oci://ghcr.io/${{ github.repository }}
+          registry-url: oci://ghcr.io/${{ github.repository }}/charts
           chart-folder: ${{ env.CHART_PATH }}
