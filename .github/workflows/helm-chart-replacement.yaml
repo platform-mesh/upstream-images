@@ -17,7 +17,7 @@ on:
         required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
-        default: "postgresql/16.6.6"
+        default: "common/2.30.0"
         required: true
   push:
     branches:
@@ -29,7 +29,7 @@ env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
   GHCR_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   WORKDIR: ${{ github.event.inputs.workdir || './charts-workdir' }}
-  CHART_TAG: ${{ github.event.inputs.chart_tag || 'postgresql/16.6.6' }}
+  CHART_TAG: ${{ github.event.inputs.chart_tag || 'common/2.30.0' }}
   IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
   DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts/__CHART__
