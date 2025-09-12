@@ -1,5 +1,8 @@
 name: Publish Bitnami Helm Chart
 
+permissions:
+  packages: write
+
 on:
   workflow_dispatch:
     inputs:
