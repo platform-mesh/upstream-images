@@ -40,7 +40,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       chart_tag: ${{ env.CHART_TAG }}
-      token: ${{ steps.app-token.outputs.token }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -252,10 +251,10 @@ jobs:
           echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
 
       - name: Push Helm chart to GHCR
-        uses: bsord/helm-push@v4.2.0
+        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
         with:
           useOCIRegistry: true
           username: ${{ github.actor }}
-          access-token: ${{ needs.setup.outputs.token }}
-          registry-url: oci://${{ env.CHART_NAMESPACE }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-url: oci://ghcr.io/${{ github.repository }}/charts
           chart-folder: ${{ env.CHART_PATH }}
