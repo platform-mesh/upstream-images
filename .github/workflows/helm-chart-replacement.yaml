@@ -31,7 +31,7 @@ env:
   WORKDIR: ${{ github.event.inputs.workdir || './charts-workdir' }}
   CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/24.8.1' }}
   IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
-  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/bitnami-charts
+  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
   DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts/__CHART__
 
 jobs:
