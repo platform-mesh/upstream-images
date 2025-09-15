@@ -249,11 +249,17 @@ jobs:
           helm dependency build "${chart_path}"
           echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
 
-      - name: Push Helm chart to GHCR
+      - name: Login to GHCR (Helm)
+        run: |
+          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Push Helm chart
         uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
         with:
           useOCIRegistry: true
           username: ${{ github.actor }}
-          access-token: ${{ secrets.GITHUB_TOKEN }}
-          registry-url: oci://ghcr.io/${{ github.repository }}/charts
+          access-token: ${{ secrets.GHCR_PAT }}
+          registry-url: oci://${{ env.CHART_NAMESPACE }}
           chart-folder: ${{ env.CHART_PATH }}
