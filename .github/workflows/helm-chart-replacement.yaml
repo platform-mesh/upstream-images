@@ -168,7 +168,7 @@ jobs:
       - name: Update chart dependencies
         env:
           GHCR_USER: ${{ github.actor }}
-          GHCR_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
           CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
         run: |
           chart_path="${{ needs.retag-images.outputs.chart_path }}"
@@ -261,5 +261,5 @@ jobs:
           useOCIRegistry: true
           username: ${{ github.actor }}
           access-token: ${{ secrets.GHCR_PAT }}
-          registry-url: oci://${{ env.CHART_NAMESPACE }}/charts
+          registry-url: oci://${{ env.CHART_NAMESPACE }}
           chart-folder: ${{ env.CHART_PATH }}
