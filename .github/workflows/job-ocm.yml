@@ -151,7 +151,7 @@ jobs:
         run: |
           ocm_ctf=.ocm/transport.ctf
           mkdir -p "$(dirname "$ocm_ctf")"
-          ./ocm add components -c --templater=go --file "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
+          ./ocm add components -c --templater=go --file "$ocm_ctf" "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
             VERSION=${{ env.VERSION }} \
             APP_VERSION=${{ env.APP_VERSION}} \
             IMAGE_NAME=${{ env.IMAGE_NAME}} \
