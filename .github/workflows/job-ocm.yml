@@ -1,20 +1,31 @@
-name: OCM
+name: Build chart only ocm component
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      chartPath:
+      chartOCIPath:
         required: true
         type: string
+        description: "OCI registry path for chart in GHCR"
+        default: ghcr.io/platform-mesh/images/charts/keycloak:24.8.1
       componentName:
         required: true
         type: string
+        description: "Component name"
+        default: github.com/platform-mesh/keycloak
       componentConstructorFile:
         required: false
         type: string
-        default: .ocm/component-constructor.yaml
+        description: "Path to the ocm constructor"
+        default: .ocm/component-constructor-chart-only.yaml
       ocmRegistryUrl:
         type: string
-        default: ghcr.io/platform-mesh
+        description: "OCI registry path for ocm component"
+        default: ghcr.io/platform-mesh/images
+  push:
+    branches:
+      - feat/**
+    paths:
+      - ".github/workflows/job-ocm.yml"
 
 jobs:
   ocm:
@@ -36,8 +47,17 @@ jobs:
               chmod +x /home/runner/.local/bin/yq
           fi
       - name: Check out the repo
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-      - name: setup OCM CLI
+        uses: actions/checkout@v4
+
+      - name: Setup Helm 3.17.2
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
+          tar -xzf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          rm -rf linux-amd64 helm.tar.gz
+          helm version
+
+      - name: Setup OCM CLI
         run: |
           REPO=${repo:=open-component-model/ocm}
           if [ -z "$version" -o "$version" == latest ]; then
@@ -51,26 +71,7 @@ jobs:
           curl -LsS -o ocm-cli.tgz "$URL"
           tar --overwrite -xvzf ocm-cli.tgz >/dev/null
           chmod a+x ocm
-      - name: Prepare Template Variables
-        run: |
-          IMAGE_NAME=$(yq '.image.name' ${{ inputs.chartPath }}/values.yaml)
-          APP_VERSION=$(yq '.appVersion' ${{ inputs.chartPath }}/Chart.yaml)
-          CHART_NAME=$(yq '.name' ${{ inputs.chartPath }}/Chart.yaml)
-          VERSION=$(yq '.version' ${{ inputs.chartPath }}/Chart.yaml)
-          CHART_REPO=https://github.com/${{ github.repository }}
-          ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
-          CHART_OCI_PATH=ghcr.io/${{ github.repository }}/charts/$CHART_NAME
-          IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/$APP_VERSION | jq -r '.object.sha')
-          
-          echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
-          echo "ORG_REPO=$ORG_REPO" >> $GITHUB_ENV
-          echo "CHART_REPO=$CHART_REPO" >> $GITHUB_ENV
-          echo "CHART_OCI_PATH=$CHART_OCI_PATH" >> $GITHUB_ENV
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
       - name: Write Credentials file
         run: |
           cat <<EOF > $HOME/.ocmconfig
@@ -99,7 +100,43 @@ jobs:
                         username: github
                         password: ${{ secrets.OPENMFP_PUBLISHER_TOKEN }}
           EOF
-      - name: create OCM ComponentArchive
+
+      - name: Pull Helm Chart from GHCR
+        run: |
+          mkdir -p ./charts
+          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
+            --username github \
+            --password-stdin
+
+          helm pull oci://${{ inputs.chartOCIPath }} --untar --untardir ./charts
+
+          chart_dir=$(basename "${{ inputs.chartOCIPath }}" | sed 's/:.*//')
+
+          chart_no_tag=$(echo "${{ inputs.chartOCIPath }}" | sed 's/:.*//')
+
+          echo "CHART_PATH=./charts/$chart_dir" >> $GITHUB_ENV
+          echo "CHART_OCI_PATH=oci://$chart_no_tag" >> $GITHUB_ENV
+
+      - name: Prepare Template Variables
+        run: |
+          IMAGE_NAME=$(yq '.image.name' $CHART_PATH/values.yaml)
+          APP_VERSION=$(yq '.appVersion' $CHART_PATH/Chart.yaml)
+          CHART_NAME=$(yq '.name' $CHART_PATH/Chart.yaml)
+          VERSION=$(yq '.version' $CHART_PATH/Chart.yaml)
+
+          CHART_REPO=https://github.com/${{ github.repository }}
+          ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
+          IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/$APP_VERSION | jq -r '.object.sha')
+
+          echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "ORG_REPO=$ORG_REPO" >> $GITHUB_ENV
+          echo "CHART_REPO=$CHART_REPO" >> $GITHUB_ENV
+          echo "CHART_OCI_PATH=$CHART_OCI_PATH" >> $GITHUB_ENV
+
+      - name: Create OCM ComponentArchive
         run: |
           ocm_ctf=.ocm/transport.ctf
           mkdir -p "$(dirname "$ocm_ctf")"
@@ -112,6 +149,7 @@ jobs:
             CHART_REPO=${{ env.CHART_REPO }} \
             COMPONENT_NAME=${{ inputs.componentName }} \
             CHART_OCI_PATH=${{ env.CHART_OCI_PATH }} \
-            LOCAL_CHART_PATH=${{ inputs.chartPath }}
+            LOCAL_CHART_PATH=${CHART_PATH}
+
       - name: Transfer to OCM REPO
         run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ inputs.ocmRegistryUrl }}"

@@ -3,15 +3,15 @@ on:
   push:
     branches:
       - main
-      - feat/**
+      # - feat/**
     paths:
       - 'charts/keycloak/**'
       - '.github/workflows/keycloak-chart.yml'
       - '.ocm/component-constructor-chart-only.yml'
-  pull_request:
-    paths:
-      - 'charts/keycloak/**'
-      - '.github/workflows/keycloak-chart.yml'
+  # pull_request:
+  #   paths:
+  #     - 'charts/keycloak/**'
+  #     - '.github/workflows/keycloak-chart.yml'
 
 jobs:
   pipeline:
