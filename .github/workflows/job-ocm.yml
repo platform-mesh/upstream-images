@@ -135,6 +135,10 @@ jobs:
           ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
           IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/$APP_VERSION 2>/dev/null | jq -r '.object.sha? // "null"') || echo "null"
 
+          if [ -z "$IMAGE_REPO_SHA" ]; then
+            IMAGE_REPO_SHA="null"
+          fi
+
           echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
