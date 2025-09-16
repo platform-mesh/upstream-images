@@ -1,9 +1,0 @@
-dependencies:
-- name: postgresql
-  repository: oci://ghcr.io/platform-mesh/images/bitnami-charts
-  version: 16.7.27
-- name: common
-  repository: oci://ghcr.io/platform-mesh/images/bitnami-charts
-  version: 2.31.4
-digest: sha256:9d3b4ade216f7cae55e12bcc09fff9b8fdffcf191ea0d3853df682dbdd7d4b61
-generated: "2025-08-28T15:13:45.000421829+02:00"

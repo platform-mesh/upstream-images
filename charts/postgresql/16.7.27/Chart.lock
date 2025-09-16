@@ -1,6 +1,0 @@
-dependencies:
-- name: common
-  repository: oci://ghcr.io/platform-mesh/images/bitnami-charts
-  version: 2.31.4
-digest: sha256:99a10141e011b94dc3a4f8a8683fc83d469b1003c7fe01d8aa22ade0309e710a
-generated: "2025-08-28T15:15:57.558346036+02:00"
