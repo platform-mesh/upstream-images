@@ -135,10 +135,6 @@ jobs:
           ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
           IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/$APP_VERSION 2>/dev/null | jq -r '.object.sha? // "null"') || echo "null"
 
-          if [ -z "$IMAGE_REPO_SHA" ]; then
-            IMAGE_REPO_SHA="null"
-          fi
-
           echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
@@ -160,7 +156,7 @@ jobs:
             CHART_REPO=${{ env.CHART_REPO }} \
             COMPONENT_NAME=$COMPONENT_NAME \
             CHART_OCI_PATH=${{ env.CHART_OCI_PATH }} \
-            LOCAL_CHART_PATH=${CHART_PATH}
+            LOCAL_CHART_PATH=${{ env.CHART_PATH}}
 
       - name: Transfer to OCM REPO
-        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "$OCM_REGISTRY_URL"
+        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ env.OCM_REGISTRY_URL }}"
