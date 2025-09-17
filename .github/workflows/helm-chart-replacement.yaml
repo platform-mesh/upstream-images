@@ -138,12 +138,13 @@ jobs:
 
           for repo in $repos; do
             tag=$(yq eval ".. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.tag" "${chart_path}/values.yaml")
-            img="${repo}:${tag}"
+
             basename=$(basename "${repo}")
             target="${{ env.GHCR_NAMESPACE }}/${basename}:${tag}"
+            legacy_img="docker.io/bitnamilegacy/${basename}:${tag}"
 
-            docker pull "$img"
-            docker tag "$img" "$target"
+            docker pull "$legacy_img"
+            docker tag "$legacy_img" "$target"
             docker push "$target"
 
             yq eval --inplace "
