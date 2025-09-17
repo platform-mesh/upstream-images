@@ -120,7 +120,7 @@ jobs:
 
       - name: Add global security config to values.yaml
         run: |
-          chart_path="${{ steps.clone.outputs.chart_path }}"
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
           
           yq eval --inplace '
             .global.security.allowInsecureImages = true
