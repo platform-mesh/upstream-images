@@ -118,6 +118,14 @@ jobs:
       - name: Docker login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: Add global security config to values.yaml
+        run: |
+          chart_path="${{ steps.clone.outputs.chart_path }}"
+          
+          yq eval --inplace '
+            .global.security.allowInsecureImages = true
+          ' "${chart_path}/values.yaml"
+
       - name: Retag & push Bitnami images
         run: |
           chart_path="${{ needs.clone-chart.outputs.chart_path }}"

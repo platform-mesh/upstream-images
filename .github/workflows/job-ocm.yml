@@ -20,7 +20,7 @@ on:
       ocmRegistryUrl:
         type: string
         description: "OCI registry path for ocm component"
-        default: ghcr.io/platform-mesh/images
+        default: ghcr.io/platform-mesh
   push:
     branches:
       - feat/**
