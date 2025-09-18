@@ -49,71 +49,71 @@ env:
 
 
 jobs:
-#  setup:
-#    name: Setup Environment
-#    runs-on: ubuntu-latest
-#    outputs:
-#      chart_tag: ${{ env.CHART_TAG }}
-#    steps:
-#      - name: Checkout repository
-#        uses: actions/checkout@v4
-#
-#      - name: Install tools
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install -y jq yq
-#
-#      - name: Install Helm 3.17.2
-#        run: |
-#          curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
-#          tar -xzf helm.tar.gz
-#          sudo mv linux-amd64/helm /usr/local/bin/helm
-#          rm -rf linux-amd64 helm.tar.gz
-#          helm version
-#      - name: Create GitHub App Token
-#        id: app-token
-#        uses: actions/create-github-app-token@v2
-#        with:
-#          app-id: "1415820"
-#          private-key: ${{ secrets.PM_PUBLISHER_PRIVATE_KEY }}
-#          owner: ${{ github.repository_owner }}
-#  clone-chart:
-#    name: Clone Chart
-#    runs-on: ubuntu-latest
-#    needs: setup
-#    outputs:
-#      chart_path: ${{ steps.clone.outputs.chart_path }}
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - id: clone
-#        run: |
-#          mkdir -p "${{ env.WORKDIR }}"
-#          tool=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f1)
-#          version=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f2)
-#          chart_path="${{ env.WORKDIR }}/${tool}"
-#          rm -rf "${chart_path}"
-#          git init "${chart_path}"
-#          git -C "${chart_path}" remote add origin "${{ env.BITNAMI_REPO }}"
-#          git -C "${chart_path}" config core.sparseCheckout true
-#          echo "bitnami/${tool}" > "${chart_path}/.git/info/sparse-checkout"
-#          git -C "${chart_path}" fetch --depth 1 origin "refs/tags/${{ env.CHART_TAG }}:refs/tags/${{ env.CHART_TAG }}"
-#          git -C "${chart_path}" checkout "tags/${{ env.CHART_TAG }}"
-#          if [[ -d "${chart_path}/bitnami/${tool}" ]]; then
-#            mv "${chart_path}/bitnami/${tool}"/* "${chart_path}/"
-#            rm -rf "${chart_path}/bitnami"
-#          fi
-#
-#          ls -R "${chart_path}"
-#          test -f "${chart_path}/values.yaml" || (echo "values.yaml not found in ${chart_path}" && exit 1)
-#
-#          echo "chart_path=${chart_path}" >> $GITHUB_OUTPUT
-#
-#      - name: Upload chart as artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    outputs:
+      chart_tag: ${{ env.CHART_TAG }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq yq
+
+      - name: Install Helm 3.17.2
+        run: |
+          curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
+          tar -xzf helm.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          rm -rf linux-amd64 helm.tar.gz
+          helm version
+      - name: Create GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: "1415820"
+          private-key: ${{ secrets.PM_PUBLISHER_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+  clone-chart:
+    name: Clone Chart
+    runs-on: ubuntu-latest
+    needs: setup
+    outputs:
+      chart_path: ${{ steps.clone.outputs.chart_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: clone
+        run: |
+          mkdir -p "${{ env.WORKDIR }}"
+          tool=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f1)
+          version=$(echo "${{ env.CHART_TAG }}" | cut -d/ -f2)
+          chart_path="${{ env.WORKDIR }}/${tool}"
+          rm -rf "${chart_path}"
+          git init "${chart_path}"
+          git -C "${chart_path}" remote add origin "${{ env.BITNAMI_REPO }}"
+          git -C "${chart_path}" config core.sparseCheckout true
+          echo "bitnami/${tool}" > "${chart_path}/.git/info/sparse-checkout"
+          git -C "${chart_path}" fetch --depth 1 origin "refs/tags/${{ env.CHART_TAG }}:refs/tags/${{ env.CHART_TAG }}"
+          git -C "${chart_path}" checkout "tags/${{ env.CHART_TAG }}"
+          if [[ -d "${chart_path}/bitnami/${tool}" ]]; then
+            mv "${chart_path}/bitnami/${tool}"/* "${chart_path}/"
+            rm -rf "${chart_path}/bitnami"
+          fi
+
+          ls -R "${chart_path}"
+          test -f "${chart_path}/values.yaml" || (echo "values.yaml not found in ${chart_path}" && exit 1)
+
+          echo "chart_path=${chart_path}" >> $GITHUB_OUTPUT
+
+      - name: Upload chart as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chart
+          path: ${{ env.WORKDIR }}
 
   build-image:
     name: Build Docker Images
@@ -140,169 +140,117 @@ jobs:
           tags: ghcr.io/platform-mesh/images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
           context: ${{ env.KEYCLOAK_IMAGE_CONTEXT_PATH }}
 
-#  retag-images:
-#    name: Retag and Push Images
-#    runs-on: ubuntu-latest
-#    needs: clone-chart
-#    outputs:
-#      chart_path: ${{ needs.clone-chart.outputs.chart_path }}
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Download chart artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
-#
-#      - name: Docker login to GHCR
-#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-#
-#      - name: Retag & push Bitnami images
-#        run: |
-#          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
-#          repos=$(yq eval '.. | select(has("image")) | .image.repository' "${chart_path}/values.yaml" | grep "bitnami" || true)
-#
-#          if [[ -z "$repos" ]]; then
-#            echo "No bitnami images found"
-#            exit 0
-#          fi
-#
-#          for repo in $repos; do
-#            tag=$(yq eval ".. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.tag" "${chart_path}/values.yaml")
-#
-#            basename=$(basename "${repo}")
-#            target="${{ env.GHCR_NAMESPACE }}/${basename}:${tag}"
-#            legacy_img="docker.io/bitnamilegacy/${basename}:${tag}"
-#
-#            docker pull --platform=linux/arm64 "$legacy_img"
-#            docker pull --platform=linux/amd64 "$legacy_img"
-#            docker tag "$legacy_img" "$target"
-#            docker push "$target"
-#
-#            yq eval --inplace "
-#              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.registry) = \"${{ env.GHCR_NAMESPACE }}\" |
-#              (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.repository) = \"${basename}\"
-#            " "${chart_path}/values.yaml"
-#          done
-#
-#      - name: Upload updated chart
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
-#          overwrite: true
-#  update-deps:
-#    name: Update Dependencies
-#    runs-on: ubuntu-latest
-#    needs: retag-images
-#    outputs:
-#      chart_path: ${{ needs.retag-images.outputs.chart_path }}
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Download chart artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
-#
-#      - name: Update chart dependencies
-#        env:
-#          GHCR_USER: ${{ github.actor }}
-#          GHCR_PAT: ${{ secrets.GHCR_PAT }}
-#          CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
-#        run: |
-#          chart_path="${{ needs.retag-images.outputs.chart_path }}"
-#          chart_yaml="${chart_path}/Chart.yaml"
-#          chart_lock="${chart_path}/Chart.lock"
-#
-#          if [[ ! -f "${chart_lock}" ]]; then
-#            echo "[WARN] No Chart.lock found, skipping dependency update." >&2
-#            exit 0
-#          fi
-#
-#          echo "[INFO] Logging in to GHCR..."
-#          if ! echo "$GHCR_PAT" | helm registry login "$CHART_NAMESPACE" --username "$GHCR_USER" --password-stdin; then
-#            echo "[ERROR] Failed to login to GHCR" >&2
-#            exit 1
-#          fi
-#
-#          dep_count=$(yq eval '.dependencies | length' "${chart_lock}")
-#          missing_deps=()
-#
-#          for i in $(seq 0 $((dep_count - 1))); do
-#            name=$(yq eval ".dependencies[${i}].name" "${chart_lock}")
-#            repo=$(yq eval ".dependencies[${i}].repository" "${chart_lock}")
-#            version=$(yq eval ".dependencies[${i}].version" "${chart_lock}")
-#
-#            if [[ "$repo" == *"bitnami"* ]]; then
-#              dep_repo="oci://${CHART_NAMESPACE}"
-#              dep_target="${dep_repo}/${name}:${version}"
-#
-#              echo "[INFO] Updating dependency ${name} -> repository: ${dep_repo}, version: ${version}"
-#
-#              # Update Chart.yaml with exact repo/version
-#              yq eval --inplace "
-#              .dependencies[] |= (select(.name == \"${name}\") | .repository = \"${dep_repo}\" | .version = \"${version}\")
-#              " "${chart_yaml}"
-#
-#              # Check if chart exists in GHCR
-#              if ! helm pull "$dep_target" --destination /tmp >/dev/null 2>&1; then
-#                echo "[WARN] Chart not found in registry: ${dep_target}"
-#                missing_deps+=("${name}:${version}")
-#              else
-#                echo "[INFO] Chart exists in registry: ${dep_target}"
-#              fi
-#            fi
-#          done
-#
-#          if [[ ${#missing_deps[@]} -gt 0 ]]; then
-#            echo "[ERROR] The following charts must be built/pushed first:" >&2
-#            for dep in "${missing_deps[@]}"; do
-#              echo "  - ${dep}" >&2
-#            done
-#            exit 1
-#          fi
-#
-#      - name: Upload updated chart
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
-#          overwrite: true
-#  package-push-chart:
-#    name: Package & Push Chart
-#    runs-on: ubuntu-latest
-#    needs: update-deps
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Download chart artifact
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: chart
-#          path: ${{ env.WORKDIR }}
-#
-#      - name: Login to GHCR (Docker + Helm)
-#        run: |
-#          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-#          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
-#            --username "${{ github.actor }}" \
-#            --password-stdin
-#
-#      - name: Rebuild Helm dependencies
-#        run: |
-#          chart_path="${{ needs.update-deps.outputs.chart_path }}"
-#          rm -f "${chart_path}/Chart.lock"
-#          helm dependency build "${chart_path}"
-#          echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
-#
-#      - name: Push Helm chart
-#        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
-#        with:
-#          useOCIRegistry: true
-#          username: ${{ github.actor }}
-#          access-token: ${{ secrets.GHCR_PAT }}
-#          registry-url: oci://${{ env.CHART_NAMESPACE }}
-#          chart-folder: ${{ env.CHART_PATH }}
+  update-deps:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    needs: retag-images
+    outputs:
+      chart_path: ${{ needs.retag-images.outputs.chart_path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download chart artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: chart
+          path: ${{ env.WORKDIR }}
+
+      - name: Update chart dependencies
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_PAT: ${{ secrets.GHCR_PAT }}
+          CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
+        run: |
+          chart_path="${{ needs.retag-images.outputs.chart_path }}"
+          chart_yaml="${chart_path}/Chart.yaml"
+          chart_lock="${chart_path}/Chart.lock"
+
+          if [[ ! -f "${chart_lock}" ]]; then
+            echo "[WARN] No Chart.lock found, skipping dependency update." >&2
+            exit 0
+          fi
+
+          echo "[INFO] Logging in to GHCR..."
+          if ! echo "$GHCR_PAT" | helm registry login "$CHART_NAMESPACE" --username "$GHCR_USER" --password-stdin; then
+            echo "[ERROR] Failed to login to GHCR" >&2
+            exit 1
+          fi
+
+          dep_count=$(yq eval '.dependencies | length' "${chart_lock}")
+          missing_deps=()
+
+          for i in $(seq 0 $((dep_count - 1))); do
+            name=$(yq eval ".dependencies[${i}].name" "${chart_lock}")
+            repo=$(yq eval ".dependencies[${i}].repository" "${chart_lock}")
+            version=$(yq eval ".dependencies[${i}].version" "${chart_lock}")
+
+            if [[ "$repo" == *"bitnami"* ]]; then
+              dep_repo="oci://${CHART_NAMESPACE}"
+              dep_target="${dep_repo}/${name}:${version}"
+
+              echo "[INFO] Updating dependency ${name} -> repository: ${dep_repo}, version: ${version}"
+
+              # Update Chart.yaml with exact repo/version
+              yq eval --inplace "
+              .dependencies[] |= (select(.name == \"${name}\") | .repository = \"${dep_repo}\" | .version = \"${version}\")
+              " "${chart_yaml}"
+
+              # Check if chart exists in GHCR
+              if ! helm pull "$dep_target" --destination /tmp >/dev/null 2>&1; then
+                echo "[WARN] Chart not found in registry: ${dep_target}"
+                missing_deps+=("${name}:${version}")
+              else
+                echo "[INFO] Chart exists in registry: ${dep_target}"
+              fi
+            fi
+          done
+
+          if [[ ${#missing_deps[@]} -gt 0 ]]; then
+            echo "[ERROR] The following charts must be built/pushed first:" >&2
+            for dep in "${missing_deps[@]}"; do
+              echo "  - ${dep}" >&2
+            done
+            exit 1
+          fi
+
+      - name: Upload updated chart
+        uses: actions/upload-artifact@v4
+        with:
+          name: chart
+          path: ${{ env.WORKDIR }}
+          overwrite: true
+  package-push-chart:
+    name: Package & Push Chart
+    runs-on: ubuntu-latest
+    needs: update-deps
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download chart artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: chart
+          path: ${{ env.WORKDIR }}
+
+      - name: Login to GHCR (Docker + Helm)
+        run: |
+          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Rebuild Helm dependencies
+        run: |
+          chart_path="${{ needs.update-deps.outputs.chart_path }}"
+          rm -f "${chart_path}/Chart.lock"
+          helm dependency build "${chart_path}"
+          echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
+
+      - name: Push Helm chart
+        uses: bsord/helm-push@51f937208fed71540ab5ec5215cf9b3ecae9c7b7 # v4.2.0
+        with:
+          useOCIRegistry: true
+          username: ${{ github.actor }}
+          access-token: ${{ secrets.GHCR_PAT }}
+          registry-url: oci://${{ env.CHART_NAMESPACE }}
+          chart-folder: ${{ env.CHART_PATH }}
