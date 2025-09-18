@@ -23,30 +23,12 @@ on:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
         default: "keycloak/25.2.3"
         required: true
-      keycloak_image_ref:
-        description: "The commit hash of the keycloak image to be build"
-        default: "d10816f7ed137e531fd17ec9e40ca6936fd31e0c"
-        required: true
-      keycloak_image_tag:
-        description: "The keycloak tag to be created"
-        default: "26.3.2-debian-12-r0"
-        required: true
-      keycloak_image_context_path:
-        description: "The path to the directory holding the dockerfile"
-        default: "bitnami/keycloak/26/debian-12"
-        required: true
 
 env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
-  GHCR_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   WORKDIR: ${{ github.event.inputs.workdir || './charts-workdir' }}
   CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/25.2.3' }}
-  IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
-  DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts/__CHART__
-  KEYCLOAK_IMAGE_REF: ${{ github.event.inputs.keycloak_image_ref || 'd10816f7ed137e531fd17ec9e40ca6936fd31e0c' }}
-  KEYCLOAK_IMAGE_TAG: ${{ github.event.inputs.keycloak_image_tag || '26.3.2-debian-12-r0' }}
-  KEYCLOAK_IMAGE_CONTEXT_PATH: ${{ github.event.inputs.keycloak_image_context_path || 'bitnami/keycloak/26/debian-12' }}
 
 
 jobs:
@@ -85,31 +67,6 @@ jobs:
         with:
           name: chart
           path: ${{ env.WORKDIR }}
-
-  build-image:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: bitnami/containers
-          ref: ${{ env.KEYCLOAK_IMAGE_REF }}
-          fetch-depth: '1'
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
-      - name: Build and push
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
-        with:
-          push: true
-          platforms: 'linux/amd64,linux/arm64'
-          tags: ghcr.io/platform-mesh/images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
-          context: ${{ env.KEYCLOAK_IMAGE_CONTEXT_PATH }}
 
   update-deps:
     name: Update Dependencies
