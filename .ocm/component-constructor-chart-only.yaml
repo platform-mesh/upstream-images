@@ -2,7 +2,7 @@ components:
   - name: {{ .COMPONENT_NAME }}
     version: {{ .VERSION }}
     provider:
-      name: The Open Micro Frontend Platform Team
+      name: The platform-mesh Team
     resources:
       - name: chart
         type: helmChart

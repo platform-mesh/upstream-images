@@ -2,7 +2,7 @@
 set -euo pipefail
 
 BITNAMI_REPO="https://github.com/bitnami/charts.git"
-GHCR_NAMESPACE="ghcr.io/olegershov/images"
+GHCR_NAMESPACE="ghcr.io/platform-mesh/images"
 WORKDIR="./charts-workdir"
 
 # For images
