@@ -21,11 +21,6 @@ on:
         type: string
         description: "OCI registry path for ocm component"
         default: ghcr.io/platform-mesh
-  push:
-    branches:
-      - feat/**
-    paths:
-      - ".github/workflows/job-ocm.yml"
 
 jobs:
   ocm:
