@@ -22,3 +22,12 @@ The main workflows are:
 ### 2. `build-postgresql`
 - Builds the postgresql image used in the keycloak chart.
 - You can lookup what commit to build by going to: https://github.com/bitnami/containers/commits/main/bitnami/postgresql/17/debian-12/Dockerfile
+
+# How to upgrade to a new keycloak version
+
+1. Trigger workflow to build new keycloak image
+1. Trigger workflow to build new postgresql image
+1. Trigger workflow to build new common chart if the version has changed
+1. Trigger workflow to build new postgresql chart if the version has changed
+1. Trigger workflow to build new keycloak chart if the version has changed
+1. Trigger workflow to build new keycloak-ocm component
