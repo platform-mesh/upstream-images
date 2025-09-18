@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/adjust-build
+
   workflow_dispatch:
     inputs:
       bitnami_repo:
@@ -42,6 +43,10 @@ env:
   IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
   DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts/__CHART__
+  KEYCLOAK_IMAGE_REF: ${{ github.event.inputs.keycloak_image_ref || 'd10816f7ed137e531fd17ec9e40ca6936fd31e0c' }}
+  KEYCLOAK_IMAGE_TAG: ${{ github.event.inputs.keycloak_image_tag || '26.3.2-debian-12-r0' }}
+  KEYCLOAK_IMAGE_CONTEXT_PATH: ${{ github.event.inputs.keycloak_image_context_path || 'bitnami/keycloak/26/debian-12' }}
+
 
 jobs:
 #  setup:
@@ -117,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: bitnami/containers
-          ref: ${{ inputs.keycloak_image_ref }}
+          ref: ${{ env.KEYCLOAK_IMAGE_REF }}
           fetch-depth: '1'
       - name: Login to GitHub Container Registry
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
@@ -131,8 +136,8 @@ jobs:
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           platforms: 'linux/amd64,linux/arm64'
-          tags: ghcr.io/platform-mesh/images/keycloak:${{ inputs.keycloak_image_tag }}
-          context: ${{ inputs.keycloak_image_context_path }}
+          tags: ghcr.io/platform-mesh/images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
+          context: ${{ env.KEYCLOAK_IMAGE_CONTEXT_PATH }}
 
 #  retag-images:
 #    name: Retag and Push Images
