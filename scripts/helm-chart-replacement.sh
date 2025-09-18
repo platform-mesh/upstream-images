@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+#
+# helm-chart-replacement.sh
+#
+# This script automates the process of:
+# 1. Cloning a specific Bitnami Helm chart at the given version.
+# 2. Extracting and retagging Bitnami container images, then pushing
+#    them to the GitHub Container Registry (ghcr.io).
+# 3. Updating chart dependencies to point to the internal registry.
+# 4. Packaging the Helm chart and publishing it to ghcr.io.
+#
+# Usage:
+#   ./helm-chart-replacement.sh <chart-name>/<version>
+# Example:
+#   ./helm-chart-replacement.sh keycloak/24.8.1
+#
+# Requirements: git, docker, helm (v3.17.2), yq, jq
+# Environment:  GHCR_USER and GHCR_PAT must be exported for authentication
+
 set -euo pipefail
 
 BITNAMI_REPO="https://github.com/bitnami/charts.git"
