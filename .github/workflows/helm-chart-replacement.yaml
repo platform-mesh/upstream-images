@@ -159,13 +159,6 @@ jobs:
           name: chart
           path: ${{ env.WORKDIR }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Rebuild Helm dependencies
         run: |
           chart_path="${{ needs.clone-chart.outputs.chart_path }}"
@@ -178,6 +171,6 @@ jobs:
         with:
           useOCIRegistry: true
           username: ${{ github.actor }}
-          access-token: ${{ secrets.GHCR_PAT }}
-          registry-url: oci://${{ env.CHART_NAMESPACE }}
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          registry-url:  oci://ghcr.io/${{ github.repository }}
           chart-folder: ${{ env.CHART_PATH }}
