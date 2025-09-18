@@ -1,7 +1,7 @@
 name: Build postgresql Image
 
 concurrency:
-  group: ${{ github.ref }}
+  group: postgresql-${{ github.ref }}
   cancel-in-progress: true
 
 on:

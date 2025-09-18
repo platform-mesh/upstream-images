@@ -1,7 +1,7 @@
 name: Build Keycloak Image
 
 concurrency:
-  group: ${{ github.ref }}
+  group: keycloak-${{ github.ref }}
   cancel-in-progress: true
 
 on:
