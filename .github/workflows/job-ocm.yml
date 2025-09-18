@@ -6,7 +6,7 @@ on:
         required: false
         type: string
         description: "OCI registry path for chart in GHCR"
-        default: ghcr.io/platform-mesh/images/charts/keycloak:24.8.1
+        default: ghcr.io/platform-mesh/images/charts/keycloak:25.2.3
       componentName:
         required: false
         type: string
