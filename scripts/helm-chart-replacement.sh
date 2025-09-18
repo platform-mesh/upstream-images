@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 #
-# helm-chart-replacement.sh
-#
 # This script automates the process of:
 # 1. Cloning a specific Bitnami Helm chart at the given version.
 # 2. Extracting and retagging Bitnami container images, then pushing
