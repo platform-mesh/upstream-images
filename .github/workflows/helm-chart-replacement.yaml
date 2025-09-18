@@ -130,9 +130,15 @@ jobs:
             target="${{ env.GHCR_NAMESPACE }}/${basename}:${tag}"
             legacy_img="docker.io/bitnamilegacy/${basename}:${tag}"
 
-            docker pull "$legacy_img"
+            platform=linux/arm64
+            docker pull --platform=$platform "$legacy_img"
             docker tag "$legacy_img" "$target"
-            docker push "$target"
+            docker push --platform=$platform "$target"
+          
+            platform=linux/amd64
+            docker pull --platform=$platform "$legacy_img"
+            docker tag "$legacy_img" "$target"
+            docker push --platform=$platform "$target"
 
             yq eval --inplace "
               (.. | select(has(\"image\") and .image.repository == \"${repo}\") | .image.registry) = \"${{ env.GHCR_NAMESPACE }}\" |
