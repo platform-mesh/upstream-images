@@ -19,10 +19,6 @@ on:
         description: "Base GHCR namespace (for images and charts)"
         default: "ghcr.io/platform-mesh/images"
         required: true
-      workdir:
-        description: "Working directory for cloned charts"
-        default: "./charts-workdir"
-        required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
         default: "keycloak/25.2.3"
@@ -30,7 +26,7 @@ on:
 
 env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
-  WORKDIR: ${{ github.event.inputs.workdir || './charts-workdir' }}
+  WORKDIR: './charts-workdir'
   CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/25.2.3' }}
   CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
 
@@ -189,5 +185,5 @@ jobs:
           useOCIRegistry: true
           username: ${{ github.actor }}
           access-token: ${{ secrets.GITHUB_TOKEN }}
-          registry-url:  oci://ghcr.io/${{ github.repository }}
+          registry-url:  oci://ghcr.io/${{ github.repository }}/charts
           chart-folder: ${{ env.CHART_PATH }}
