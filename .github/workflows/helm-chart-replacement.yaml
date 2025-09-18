@@ -170,6 +170,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Helm
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" \
+            --password-stdin
+
       - name: Rebuild Helm dependencies
         run: |
           chart_path="${{ needs.clone-chart.outputs.chart_path }}"
