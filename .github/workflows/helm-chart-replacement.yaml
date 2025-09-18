@@ -120,8 +120,6 @@ jobs:
     name: Update Dependencies
     needs: [clone-chart]
     runs-on: ubuntu-latest
-    outputs:
-      chart_path: ${{ needs.retag-images.outputs.chart_path }}
     steps:
       - uses: actions/checkout@v4
 
@@ -137,7 +135,7 @@ jobs:
           GHCR_PAT: ${{ secrets.GHCR_PAT }}
           CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
         run: |
-          chart_path="${{ needs.retag-images.outputs.chart_path }}"
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
           chart_yaml="${chart_path}/Chart.yaml"
           chart_lock="${chart_path}/Chart.lock"
 
@@ -217,7 +215,7 @@ jobs:
 
       - name: Rebuild Helm dependencies
         run: |
-          chart_path="${{ needs.update-deps.outputs.chart_path }}"
+          chart_path="${{ needs.clone-chart.outputs.chart_path }}"
           rm -f "${chart_path}/Chart.lock"
           helm dependency build "${chart_path}"
           echo "CHART_PATH=${chart_path}" >> $GITHUB_ENV
