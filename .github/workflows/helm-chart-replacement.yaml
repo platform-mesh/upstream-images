@@ -143,7 +143,7 @@ jobs:
   update-deps:
     name: Update Dependencies
     runs-on: ubuntu-latest
-    needs: retag-images
+    needs: setup
     outputs:
       chart_path: ${{ needs.retag-images.outputs.chart_path }}
     steps:
