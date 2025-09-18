@@ -206,12 +206,12 @@ jobs:
           name: chart
           path: ${{ env.WORKDIR }}
 
-      - name: Login to GHCR (Docker + Helm)
-        run: |
-          echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
-            --username "${{ github.actor }}" \
-            --password-stdin
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rebuild Helm dependencies
         run: |
