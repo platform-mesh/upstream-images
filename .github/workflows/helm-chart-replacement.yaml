@@ -25,7 +25,7 @@ on:
         required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
-        default: "common/2.30.0"
+        default: "keycloak/25.2.3"
         required: true
       keycloak_image_ref:
         description: "The commit hash of the keycloak image to be build"
@@ -44,7 +44,7 @@ env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
   GHCR_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   WORKDIR: ${{ github.event.inputs.workdir || './charts-workdir' }}
-  CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/24.8.1' }}
+  CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/25.2.3' }}
   IMAGE_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}
   CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
   DEP_TEMPLATE: oci://${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts/__CHART__
