@@ -17,19 +17,15 @@ on:
         type: string
         description: "Path to the ocm constructor"
         default: .ocm/component-constructor-chart-only.yaml
-      ocmRegistryUrl:
-        type: string
-        description: "OCI registry path for ocm component"
-        default: ghcr.io/platform-mesh
 
 jobs:
   ocm:
     runs-on: ubuntu-latest
     env:
-      CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/images/charts/keycloak:24.8.1' }}
+      CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/images/charts/keycloak:25.2.3' }}
       COMPONENT_NAME: ${{ inputs.componentName || 'github.com/platform-mesh/keycloak' }}
       COMPONENT_CONSTRUCTOR_FILE: ${{ inputs.componentConstructorFile || '.ocm/component-constructor-chart-only.yaml' }}
-      OCM_REGISTRY_URL: ${{ inputs.ocmRegistryUrl || 'ghcr.io/platform-mesh' }}
+      OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'
     
     steps:
       - name: Create Github App Token
