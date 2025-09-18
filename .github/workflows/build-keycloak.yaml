@@ -1,4 +1,4 @@
-name: Build keycloak
+name: Build Keycloak Image
 
 concurrency:
   group: ${{ github.ref }}
