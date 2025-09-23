@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # install kcp plugins
 kubectl krew index add kcp-dev https://github.com/kcp-dev/krew-index.git
