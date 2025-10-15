@@ -1,6 +1,6 @@
-# Images Repository
+# upstream-images Repository
 
-This repository simplifies the replacement of images and dependencies from Bitnami charts and builds OCM components for them.
+This repository simplifies the replacement of upstream-images and dependencies from Bitnami charts and builds OCM components for them.
 
 ## Workflows
 

@@ -49,5 +49,5 @@ jobs:
         with:
           push: true
           platforms: 'linux/amd64,linux/arm64'
-          tags: ghcr.io/platform-mesh/images/postgresql:${{ env.IMAGE_TAG }}
+          tags: ghcr.io/platform-mesh/upstream-images/postgresql:${{ env.IMAGE_TAG }}
           context: ${{ env.IMAGE_CONTEXT_PATH }}
