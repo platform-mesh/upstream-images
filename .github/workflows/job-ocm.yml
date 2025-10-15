@@ -6,7 +6,7 @@ on:
         required: false
         type: string
         description: "OCI registry path for chart in GHCR"
-        default: ghcr.io/platform-mesh/images/charts/keycloak:25.2.3
+        default: ghcr.io/platform-mesh/upstream-images/charts/keycloak:25.2.3
       componentName:
         required: false
         type: string
@@ -22,7 +22,7 @@ jobs:
   ocm:
     runs-on: ubuntu-latest
     env:
-      CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/images/charts/keycloak:25.2.3' }}
+      CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/upstream-images/charts/keycloak:25.2.3' }}
       COMPONENT_NAME: ${{ inputs.componentName || 'github.com/platform-mesh/keycloak' }}
       COMPONENT_CONSTRUCTOR_FILE: ${{ inputs.componentConstructorFile || '.ocm/component-constructor-chart-only.yaml' }}
       OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'

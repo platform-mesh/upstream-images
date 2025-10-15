@@ -17,7 +17,7 @@ on:
         required: true
       ghcr_namespace:
         description: "Base GHCR namespace (for images and charts)"
-        default: "ghcr.io/platform-mesh/images"
+        default: "ghcr.io/platform-mesh/upstream-images"
         required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
@@ -28,7 +28,7 @@ env:
   BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
   WORKDIR: './charts-workdir'
   CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/25.2.3' }}
-  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/images' }}/charts
+  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/upstream-images' }}/charts
 
 
 jobs:

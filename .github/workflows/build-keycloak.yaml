@@ -49,5 +49,5 @@ jobs:
         with:
           push: true
           platforms: 'linux/amd64,linux/arm64'
-          tags: ghcr.io/platform-mesh/images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
+          tags: ghcr.io/platform-mesh/upstream-images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
           context: ${{ env.KEYCLOAK_IMAGE_CONTEXT_PATH }}
