@@ -7,10 +7,6 @@
 
 This repository contains automation to build and push select images and charts from upstream open source projects.
 
-## Requirements
-
-The account-operator requires a installation of go. Checkout the [go.mod](go.mod) for the required go version and dependencies.
-
 ## Security / Disclosure
 If you find any bug that may be a security problem, please follow our instructions at [in our security policy](https://github.com/platform-mesh/extension-manager-operator/security/policy) on how to report it. Please do not create GitHub issues for security-related doubts or problems.
 
@@ -21,12 +17,3 @@ Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository f
 ## Code of Conduct
 
 Please refer to the [CODE_OF_CONDUCT.md](https://github.com/platform-mesh/.github/blob/main/CODE_OF_CONDUCT.md) file in this repository information on the expected Code of Conduct for contributing to platform-mesh.
-
-
-
-
-
-# upstream-images Repository
-
-This repository simplifies the replacement of upstream-images and dependencies from Bitnami charts and builds OCM components for them.
-
