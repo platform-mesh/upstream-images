@@ -1,33 +1,32 @@
+> [!WARNING]
+> This Repository is under development and not ready for productive use. It is in an alpha stage. That means APIs and concepts may change on short notice including breaking changes or complete removal of apis.
+
+# platform-mesh - upstream-images
+
+## Description
+
+This repository contains automation to build and push select images and charts from upstream open source projects.
+
+## Requirements
+
+The account-operator requires a installation of go. Checkout the [go.mod](go.mod) for the required go version and dependencies.
+
+## Security / Disclosure
+If you find any bug that may be a security problem, please follow our instructions at [in our security policy](https://github.com/platform-mesh/extension-manager-operator/security/policy) on how to report it. Please do not create GitHub issues for security-related doubts or problems.
+
+## Contributing
+
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file in this repository for instructions on how to contribute to platform-mesh.
+
+## Code of Conduct
+
+Please refer to the [CODE_OF_CONDUCT.md](https://github.com/platform-mesh/.github/blob/main/CODE_OF_CONDUCT.md) file in this repository information on the expected Code of Conduct for contributing to platform-mesh.
+
+
+
+
+
 # upstream-images Repository
 
 This repository simplifies the replacement of upstream-images and dependencies from Bitnami charts and builds OCM components for them.
 
-## Workflows
-
-The main workflows are:
-
-### 1. `helm-chart-replacement`
-- Clones the Bitnami chart for the version you specify.  
-- Checks the `dependencies` section in `Chart.yaml` to verify whether the required dependencies already exist in the `ghcr.io` registry.  
-  - If they exist, it rebuilds the `Chart.lock` file, packages the chart, and pushes it to `ghcr.io`.  
-  - If they do not exist, it outputs a list of charts that must be built first.  
-
-### 2. `job-ocm`
-- Builds an OCM component for the chart specified in the input parameters.
-
-### 2. `build-keycloak`
-- Builds the keycloak image used in the keycloak chart.
-- You can lookup what commit to build by going to: https://github.com/bitnami/containers/commits/main/bitnami/keycloak/26/debian-12/Dockerfile
-
-### 2. `build-postgresql`
-- Builds the postgresql image used in the keycloak chart.
-- You can lookup what commit to build by going to: https://github.com/bitnami/containers/commits/main/bitnami/postgresql/17/debian-12/Dockerfile
-
-# How to upgrade to a new keycloak version
-
-1. Trigger workflow to build new keycloak image
-1. Trigger workflow to build new postgresql image
-1. Trigger workflow to build new common chart if the version has changed
-1. Trigger workflow to build new postgresql chart if the version has changed
-1. Trigger workflow to build new keycloak chart if the version has changed
-1. Trigger workflow to build new keycloak-ocm component
