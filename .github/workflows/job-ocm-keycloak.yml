@@ -37,6 +37,11 @@ on:
         type: string
         description: "OCI registry path for image in GHCR"
         default: ghcr.io/platform-mesh/upstream-images/keycloak
+      keycloakPostgresqlImageVersion:
+        description: "Keycloak PostgreSQL image version"
+        required: false
+        type: string
+        default: 17.6.0-debian-12-r4
       componentName:
         required: false
         type: string
@@ -111,6 +116,7 @@ jobs:
             CHART_VERSION=${{ inputs.chartVersion }} \
             CHART_SOURCE_COMMIT=${{ inputs.chartSourceCommit }} \
             COMPONENT_NAME=${{ env.COMPONENT_NAME }} \
+            KEYCLOAK_POSTGRESQL_IMAGE_VERSION=${{ inputs.keycloakPostgresqlImageVersion }} \
             CHART_OCI_PATH=${{ inputs.chartOCIPackagePath }}
 
       - name: Print OCM Component

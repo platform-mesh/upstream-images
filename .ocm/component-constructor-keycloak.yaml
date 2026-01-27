@@ -18,6 +18,13 @@ components:
         access:
           type: ociArtifact
           imageReference: "{{ .IMAGE_NAME }}:{{ .IMAGE_TAG }}"
+      - name: postgresql-image
+        type: ociImage
+        relation: external
+        version: {{ .KEYCLOAK_POSTGRESQL_IMAGE_VERSION }}
+        access:
+          type: ociArtifact
+          imageReference: "ghcr.io/platform-mesh/upstream-images/postgresql:{{ .KEYCLOAK_POSTGRESQL_IMAGE_VERSION }}"
     sources:
       - name: source
         type: git
