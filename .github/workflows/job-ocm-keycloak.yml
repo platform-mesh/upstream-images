@@ -21,7 +21,7 @@ on:
         required: false
         type: string
         description: "OCI registry path for image in GHCR"
-        default: ghcr.io/platform-mesh/upstream-images/images/keycloak
+        default: ghcr.io/platform-mesh/images/keycloak
       componentName:
         required: false
         type: string
