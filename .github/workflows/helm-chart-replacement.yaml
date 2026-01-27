@@ -21,7 +21,7 @@ on:
         required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
-        default: "keycloak/25.3.0"
+        default: "keycloak/25.2.5"
         required: true
 
 env:

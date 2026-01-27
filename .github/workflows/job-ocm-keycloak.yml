@@ -6,17 +6,27 @@ on:
         description: "Keycloak image version (semantic version for component)"
         required: false
         type: string
-        default: 26.3.3
+        default: 26.5.2
       imageTag:
         description: "Keycloak image tag (full tag for pulling image)"
         required: false
         type: string
-        default: 26.3.3-debian-12-r0
+        default: 26.5.2-debian-12-r0
       chartVersion:
         description: "Keycloak chart version"
         required: false
         type: string
-        default: 25.2.3
+        default: 25.3.0
+      imageSourceCommit:
+        description: "Commit SHA from bitnami/containers for image source"
+        required: false
+        type: string
+        default: "411bc7189c51ca61415abecaf1be8ab13ab24592"
+      chartSourceCommit:
+        description: "Commit SHA from bitnami/charts for chart source"
+        required: false
+        type: string
+        default: "b1afd5e96c71bbf2fa5ee10d23ca0d7d958fe3a9"
       chartOCIPackagePath:
         required: false
         type: string
@@ -26,7 +36,7 @@ on:
         required: false
         type: string
         description: "OCI registry path for image in GHCR"
-        default: ghcr.io/platform-mesh/images/keycloak
+        default: ghcr.io/platform-mesh/upstream-images/keycloak
       componentName:
         required: false
         type: string
@@ -47,31 +57,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CHART_OCI_PATH_INPUT: "${{ inputs.chartOCIPackagePath }}:${{ inputs.chartVersion }}"
       COMPONENT_NAME: ${{ inputs.componentName }}
       COMPONENT_CONSTRUCTOR_FILE: '.ocm/component-constructor-keycloak.yaml'
-      OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'
+      OCM_REGISTRY_URL: 'ghcr.io/platform-mesh'
     
     steps:
-      - name: Setup yq@latest
-        run: |
-          if ! command -v yq &>/dev/null
-          then
-            mkdir -p /home/runner/.local/bin
-            wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /home/runner/.local/bin/yq &&\
-              chmod +x /home/runner/.local/bin/yq
-          fi
-
       - name: Check out the repo
         uses: actions/checkout@v4
-
-      - name: Setup Helm 3.17.2
-        run: |
-          curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
-          tar -xzf helm.tar.gz
-          sudo mv linux-amd64/helm /usr/local/bin/helm
-          rm -rf linux-amd64 helm.tar.gz
-          helm version
 
       - name: Setup OCM CLI
         run: |
@@ -107,38 +99,6 @@ jobs:
                           password: ${{ secrets.GITHUB_TOKEN }}
           EOF
 
-      - name: Pull Helm Chart from GHCR
-        run: |
-          mkdir -p ./charts
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
-            --username github \
-            --password-stdin
-
-          helm pull oci://$CHART_OCI_PATH_INPUT --untar --untardir ./charts
-
-          chart_dir=$(basename "$CHART_OCI_PATH_INPUT" | sed 's/:.*//')
-          chart_no_tag=$(echo "$CHART_OCI_PATH_INPUT" | sed 's/:.*//')
-
-          echo "CHART_PATH=./charts/$chart_dir" >> $GITHUB_ENV
-          echo "CHART_OCI_PATH=oci://$chart_no_tag" >> $GITHUB_ENV
-
-      - name: Prepare Template Variables
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          IMAGE_NAME=${{ inputs.imageOCIPackagePath }}
-          CHART_NAME=$(yq '.name' $CHART_PATH/Chart.yaml)
-
-          CHART_REPO=https://github.com/${{ github.repository }}
-          ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
-          IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/${{ inputs.imageVersion }} 2>/dev/null | jq -r '.object.sha? // "null"') || echo "null"
-
-          echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-          echo "ORG_REPO=$ORG_REPO" >> $GITHUB_ENV
-          echo "CHART_REPO=$CHART_REPO" >> $GITHUB_ENV
-          echo "CHART_OCI_PATH=$CHART_OCI_PATH" >> $GITHUB_ENV
-
       - name: Create OCM ComponentArchive
         run: |
           ocm_ctf=.ocm/transport.ctf
@@ -146,15 +106,12 @@ jobs:
           ./ocm add components -c --templater=go --file "$ocm_ctf" "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
             IMAGE_VERSION=${{ inputs.imageVersion }} \
             IMAGE_TAG=${{ inputs.imageTag }} \
-            IMAGE_NAME=${{ env.IMAGE_NAME}} \
-            COMMIT=${{ github.sha }} \
-            IMAGE_REPO=${{ env.ORG_REPO }} \
-            IMAGE_REPO_SHA=${{ env.IMAGE_REPO_SHA }} \
+            IMAGE_NAME=${{ inputs.imageOCIPackagePath }} \
+            IMAGE_SOURCE_COMMIT=${{ inputs.imageSourceCommit }} \
             CHART_VERSION=${{ inputs.chartVersion }} \
-            CHART_REPO=${{ env.CHART_REPO }} \
+            CHART_SOURCE_COMMIT=${{ inputs.chartSourceCommit }} \
             COMPONENT_NAME=${{ env.COMPONENT_NAME }} \
-            CHART_OCI_PATH=${{ env.CHART_OCI_PATH }} \
-            LOCAL_CHART_PATH=${{ env.CHART_PATH}}
+            CHART_OCI_PATH=${{ inputs.chartOCIPackagePath }}
 
       - name: Print OCM Component
         run: ./ocm get components -o yaml .ocm/transport.ctf
