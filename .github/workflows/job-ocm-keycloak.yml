@@ -33,6 +33,10 @@ on:
         description: "Dry run mode - skip pushing to OCM registry"
         default: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   ocm:
     runs-on: ubuntu-latest
@@ -101,7 +105,7 @@ jobs:
       - name: Pull Helm Chart from GHCR
         run: |
           mkdir -p ./charts
-          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
             --username github \
             --password-stdin
 
