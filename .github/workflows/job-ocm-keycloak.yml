@@ -20,33 +20,30 @@ on:
       imageOCIPackagePath:
         required: false
         type: string
-        description: "OCI registry path for chart in GHCR"
+        description: "OCI registry path for image in GHCR"
         default: ghcr.io/platform-mesh/upstream-images/keycloak
       componentName:
         required: false
         type: string
         description: "Component name"
         default: github.com/platform-mesh/keycloak
+      dryRun:
+        required: false
+        type: boolean
+        description: "Dry run mode - skip pushing to OCM registry"
+        default: true
 
 jobs:
   ocm:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
-      CHART_OCI_PATH_INPUT: "${{ inputs.chartOCIPath }}:${{ inputs.chartVersion }}"
-      IMAGE_OCI_PATH_INPUT: "${{ inputs.chartOCIPath }}:${{ inputs.imageVersion }}"
+      CHART_OCI_PATH_INPUT: "${{ inputs.chartOCIPackagePath }}:${{ inputs.chartVersion }}"
       COMPONENT_NAME: ${{ inputs.componentName }}
       COMPONENT_CONSTRUCTOR_FILE: '.ocm/component-constructor-keycloak.yaml'
       OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'
     
     steps:
-      - name: Create Github App Token
-        uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: "1415820"
-          private-key: ${{ secrets.PM_PUBLISHER_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-      
       - name: Setup yq@latest
         run: |
           if ! command -v yq &>/dev/null
@@ -85,21 +82,21 @@ jobs:
       - name: Write Credentials file
         run: |
           cat <<EOF > $HOME/.ocmconfig
-          type: generic.config.ocm.software/v1
-          configurations:
-            - type: credentials.config.ocm.software
-              consumers:
-                - identity:
-                    type: OCIRegistry
-                    scheme: https
-                    hostname: ghcr.io
-                    pathprefix: platform-mesh
-                  credentials:
-                    - type: Credentials
-                      properties:
-                        username: github
-                        password: ${{ secrets.GITHUB_TOKEN }}
-          EOF
+type: generic.config.ocm.software/v1
+configurations:
+  - type: credentials.config.ocm.software
+    consumers:
+      - identity:
+          type: OCIRegistry
+          scheme: https
+          hostname: ghcr.io
+          pathprefix: platform-mesh
+        credentials:
+          - type: Credentials
+            properties:
+              username: github
+              password: ${{ secrets.GITHUB_TOKEN }}
+EOF
 
       - name: Pull Helm Chart from GHCR
         run: |
@@ -117,8 +114,10 @@ jobs:
           echo "CHART_OCI_PATH=oci://$chart_no_tag" >> $GITHUB_ENV
 
       - name: Prepare Template Variables
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          IMAGE_NAME=${{ inputs.imageOCIPackagePath}}
+          IMAGE_NAME=${{ inputs.imageOCIPackagePath }}
           APP_VERSION=${{ inputs.imageVersion }}
           CHART_NAME=$(yq '.name' $CHART_PATH/Chart.yaml)
           VERSION=$(yq '.version' $CHART_PATH/Chart.yaml)
@@ -129,7 +128,7 @@ jobs:
 
           echo "IMAGE_REPO_SHA=$IMAGE_REPO_SHA" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "CHART_VERSION=CHART_VERSION" >> $GITHUB_ENV
+          echo "CHART_VERSION=${{ inputs.chartVersion }}" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
           echo "ORG_REPO=$ORG_REPO" >> $GITHUB_ENV
@@ -145,12 +144,14 @@ jobs:
             APP_VERSION=${{ env.APP_VERSION}} \
             IMAGE_NAME=${{ env.IMAGE_NAME}} \
             COMMIT=${{ github.sha }} \
+            IMAGE_REPO=${{ env.ORG_REPO }} \
             IMAGE_REPO_SHA=${{ env.IMAGE_REPO_SHA }} \
             CHART_VERSION=${{ env.CHART_VERSION }} \
             CHART_REPO=${{ env.CHART_REPO }} \
-            COMPONENT_NAME=$COMPONENT_NAME \
+            COMPONENT_NAME=${{ env.COMPONENT_NAME }} \
             CHART_OCI_PATH=${{ env.CHART_OCI_PATH }} \
             LOCAL_CHART_PATH=${{ env.CHART_PATH}}
 
-#      - name: Transfer to OCM REPO
-#        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ env.OCM_REGISTRY_URL }}"
+      - name: Transfer to OCM REPO
+        if: ${{ inputs.dryRun != true }}
+        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ env.OCM_REGISTRY_URL }}"
