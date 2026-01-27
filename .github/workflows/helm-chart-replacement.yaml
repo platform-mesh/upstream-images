@@ -97,7 +97,7 @@ jobs:
           fi
 
           echo "[INFO] Logging in to GHCR..."
-          if ! echo "$GHCR_PAT" | helm registry login "$CHART_NAMESPACE" --username "$GHCR_USER" --password-stdin; then
+          if ! echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login "$CHART_NAMESPACE" --username "$GHCR_USER" --password-stdin; then
             echo "[ERROR] Failed to login to GHCR" >&2
             exit 1
           fi
