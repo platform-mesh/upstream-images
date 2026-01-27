@@ -21,14 +21,14 @@ on:
         required: true
       chart_tag:
         description: "Chart tag to process (e.g. nginx/15.2.1)"
-        default: "keycloak/25.2.3"
+        default: "keycloak/26.5.2"
         required: true
 
 env:
-  BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo || 'https://github.com/bitnami/charts.git' }}
+  BITNAMI_REPO: ${{ github.event.inputs.bitnami_repo }}
   WORKDIR: './charts-workdir'
-  CHART_TAG: ${{ github.event.inputs.chart_tag || 'keycloak/25.2.3' }}
-  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace || 'ghcr.io/platform-mesh/upstream-images' }}/charts
+  CHART_TAG: ${{ github.event.inputs.chart_tag }}
+  CHART_NAMESPACE: ${{ github.event.inputs.ghcr_namespace }}/charts
 
 
 jobs:
