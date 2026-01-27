@@ -6,7 +6,7 @@ on:
         description: "Keycloak image version"
         required: false
         type: string
-        default: 26.5.2
+        default: 26.3.3-debian-12-r0
       chartVersion:
         description: "Keycloak chart version"
         required: false
