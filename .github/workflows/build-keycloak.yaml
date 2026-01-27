@@ -20,12 +20,6 @@ on:
         default: "bitnami/keycloak/26/debian-12"
         required: true
 
-env:
-  KEYCLOAK_IMAGE_REF: ${{ github.event.inputs.keycloak_image_ref || 'd10816f7ed137e531fd17ec9e40ca6936fd31e0c' }}
-  KEYCLOAK_IMAGE_TAG: ${{ github.event.inputs.keycloak_image_tag || '26.3.2-debian-12-r0' }}
-  KEYCLOAK_IMAGE_CONTEXT_PATH: ${{ github.event.inputs.keycloak_image_context_path || 'bitnami/keycloak/26/debian-12' }}
-
-
 jobs:
   build-image:
     name: Build Docker Images
@@ -34,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: bitnami/containers
-          ref: ${{ env.KEYCLOAK_IMAGE_REF }}
+          ref: ${{ github.event.inputs.keycloak_image_ref }}
           fetch-depth: '1'
       - name: Login to GitHub Container Registry
         uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
@@ -49,5 +43,5 @@ jobs:
         with:
           push: true
           platforms: 'linux/amd64,linux/arm64'
-          tags: ghcr.io/platform-mesh/upstream-images/keycloak:${{ env.KEYCLOAK_IMAGE_TAG }}
-          context: ${{ env.KEYCLOAK_IMAGE_CONTEXT_PATH }}
+          tags: ghcr.io/platform-mesh/upstream-images/keycloak:${{ github.event.inputs.keycloak_image_tag }}
+          context: ${{ github.event.inputs.keycloak_image_context_path }}
