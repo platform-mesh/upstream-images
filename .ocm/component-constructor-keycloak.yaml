@@ -1,6 +1,6 @@
 components:
   - name: {{ .COMPONENT_NAME }}
-    version: {{ .VERSION }}
+    version: {{ .IMAGE_VERSION }}
     provider:
       name: The platform-mesh Team
     resources:
@@ -10,18 +10,18 @@ components:
         version: {{ .CHART_VERSION }}
         access:
           type: ociArtifact
-          imageReference: "{{ .CHART_OCI_PATH }}:{{ .VERSION }}"
+          imageReference: "{{ .CHART_OCI_PATH }}:{{ .CHART_VERSION }}"
       - name: image
         type: ociImage
         relation: external
-        version: {{ .APP_VERSION }}
+        version: {{ .IMAGE_VERSION }}
         access:
           type: ociArtifact
-          imageReference: "{{ .IMAGE_NAME }}:{{ .APP_VERSION }}"
+          imageReference: "{{ .IMAGE_NAME }}:{{ .IMAGE_VERSION }}"
     sources:
       - name: source
         type: git
-        version: {{ .APP_VERSION }}
+        version: {{ .IMAGE_VERSION }}
         access:
           commit: {{ .IMAGE_REPO_SHA }}
           repoUrl: {{ .IMAGE_REPO }}
