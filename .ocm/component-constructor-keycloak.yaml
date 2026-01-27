@@ -14,10 +14,10 @@ components:
       - name: image
         type: ociImage
         relation: external
-        version: {{ .IMAGE_VERSION }}
+        version: {{ .IMAGE_TAG }}
         access:
           type: ociArtifact
-          imageReference: "{{ .IMAGE_NAME }}:{{ .IMAGE_VERSION }}"
+          imageReference: "{{ .IMAGE_NAME }}:{{ .IMAGE_TAG }}"
     sources:
       - name: source
         type: git

@@ -3,7 +3,12 @@ on:
   workflow_dispatch:
     inputs:
       imageVersion:
-        description: "Keycloak image version"
+        description: "Keycloak image version (semantic version for component)"
+        required: false
+        type: string
+        default: 26.3.3
+      imageTag:
+        description: "Keycloak image tag (full tag for pulling image)"
         required: false
         type: string
         default: 26.3.3-debian-12-r0
@@ -140,6 +145,7 @@ jobs:
           mkdir -p "$(dirname "$ocm_ctf")"
           ./ocm add components -c --templater=go --file "$ocm_ctf" "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
             IMAGE_VERSION=${{ inputs.imageVersion }} \
+            IMAGE_TAG=${{ inputs.imageTag }} \
             IMAGE_NAME=${{ env.IMAGE_NAME}} \
             COMMIT=${{ github.sha }} \
             IMAGE_REPO=${{ env.ORG_REPO }} \
