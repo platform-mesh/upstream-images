@@ -9,11 +9,11 @@ on:
     inputs:
       keycloak_image_ref:
         description: "The commit hash of the keycloak image to be build"
-        default: "d10816f7ed137e531fd17ec9e40ca6936fd31e0c"
+        default: "411bc7189c51ca61415abecaf1be8ab13ab24592"
         required: true
       keycloak_image_tag:
         description: "The keycloak tag to be created"
-        default: "26.3.2-debian-12-r0"
+        default: "26.5.2-debian-12-r0"
         required: true
       keycloak_image_context_path:
         description: "The path to the directory holding the dockerfile"
