@@ -82,21 +82,21 @@ jobs:
       - name: Write Credentials file
         run: |
           cat <<EOF > $HOME/.ocmconfig
-type: generic.config.ocm.software/v1
-configurations:
-  - type: credentials.config.ocm.software
-    consumers:
-      - identity:
-          type: OCIRegistry
-          scheme: https
-          hostname: ghcr.io
-          pathprefix: platform-mesh
-        credentials:
-          - type: Credentials
-            properties:
-              username: github
-              password: ${{ secrets.GITHUB_TOKEN }}
-EOF
+            type: generic.config.ocm.software/v1
+            configurations:
+              - type: credentials.config.ocm.software
+                consumers:
+                  - identity:
+                      type: OCIRegistry
+                      scheme: https
+                      hostname: ghcr.io
+                      pathprefix: platform-mesh
+                    credentials:
+                      - type: Credentials
+                        properties:
+                          username: github
+                          password: ${{ secrets.GITHUB_TOKEN }}
+          EOF
 
       - name: Pull Helm Chart from GHCR
         run: |
