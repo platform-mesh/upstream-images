@@ -4,6 +4,10 @@ concurrency:
   group: postgresql-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -30,8 +34,9 @@ jobs:
   build-image:
     name: Build Docker Images
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           repository: bitnami/containers
           ref: ${{ env.IMAGE_REF }}

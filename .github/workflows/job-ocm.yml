@@ -18,9 +18,14 @@ on:
         description: "Path to the ocm constructor"
         default: .ocm/component-constructor-chart-only.yaml
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   ocm:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/upstream-images/charts/keycloak:25.2.3' }}
       COMPONENT_NAME: ${{ inputs.componentName || 'github.com/platform-mesh/keycloak' }}
@@ -28,38 +33,40 @@ jobs:
       OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'
     
     steps:
-      - name: Setup yq@latest
+      - name: Setup yq v4.53.2
         run: |
           if ! command -v yq &>/dev/null
           then
+            YQ_VERSION="v4.53.2"
+            YQ_SHA256="d56bf5c6819e8e696340c312bd70f849dc1678a7cda9c2ad63eebd906371d56b"
             mkdir -p /home/runner/.local/bin
-            wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /home/runner/.local/bin/yq &&\
-              chmod +x /home/runner/.local/bin/yq
+            wget -q "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" -O /home/runner/.local/bin/yq
+            echo "${YQ_SHA256}  /home/runner/.local/bin/yq" | sha256sum -c -
+            chmod +x /home/runner/.local/bin/yq
           fi
 
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Setup Helm 3.17.2
         run: |
+          HELM_SHA256="90c28792a1eb5fb0b50028e39ebf826531ebfcf73f599050dbd79bab2f277241"
           curl -fsSL https://get.helm.sh/helm-v3.17.2-linux-amd64.tar.gz -o helm.tar.gz
+          echo "${HELM_SHA256}  helm.tar.gz" | sha256sum -c -
           tar -xzf helm.tar.gz
           sudo mv linux-amd64/helm /usr/local/bin/helm
           rm -rf linux-amd64 helm.tar.gz
           helm version
 
-      - name: Setup OCM CLI
+      - name: Setup OCM CLI v0.39.0
         run: |
-          REPO=${repo:=open-component-model/ocm}
-          if [ -z "$version" -o "$version" == latest ]; then
-            version="$(basename "$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/$REPO/releases/latest)")"
-            echo "Selecting latest version: $version"
-          fi
-          VERSION=${version#v}
-          ARCHIVE_FILE="ocm-${VERSION}-linux-amd64.tar.gz"
-          URL="https://github.com/$REPO/releases/download/v${VERSION}/$ARCHIVE_FILE"
-          echo "Installing ocm-cli version $version from $REPO"
+          OCM_VERSION="0.39.0"
+          OCM_SHA256="421fb87130cd0c9320c2e65204eddfddaf39aa31580d5852ea84356df08b8a98"
+          ARCHIVE_FILE="ocm-${OCM_VERSION}-linux-amd64.tar.gz"
+          URL="https://github.com/open-component-model/ocm/releases/download/v${OCM_VERSION}/${ARCHIVE_FILE}"
+          echo "Installing ocm-cli version v${OCM_VERSION}"
           curl -LsS -o ocm-cli.tgz "$URL"
+          echo "${OCM_SHA256}  ocm-cli.tgz" | sha256sum -c -
           tar --overwrite -xvzf ocm-cli.tgz >/dev/null
           chmod a+x ocm
 
@@ -110,6 +117,10 @@ jobs:
       - name: Prepare Template Variables
         run: |
           IMAGE_NAME=$(yq '.image.name' $CHART_PATH/values.yaml)
+          if [[ "$IMAGE_NAME" != ghcr.io/platform-mesh/* ]]; then
+            echo "::error::IMAGE_NAME '${IMAGE_NAME}' does not match expected prefix 'ghcr.io/platform-mesh/'"
+            exit 1
+          fi
           APP_VERSION=$(yq '.appVersion' $CHART_PATH/Chart.yaml)
           CHART_NAME=$(yq '.name' $CHART_PATH/Chart.yaml)
           VERSION=$(yq '.version' $CHART_PATH/Chart.yaml)
