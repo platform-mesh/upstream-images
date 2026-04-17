@@ -28,14 +28,6 @@ jobs:
       OCM_REGISTRY_URL:  'ghcr.io/platform-mesh'
     
     steps:
-      - name: Create Github App Token
-        uses: actions/create-github-app-token@v2
-        id: app-token
-        with:
-          app-id: "1415820"
-          private-key: ${{ secrets.PM_PUBLISHER_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-      
       - name: Setup yq@latest
         run: |
           if ! command -v yq &>/dev/null
