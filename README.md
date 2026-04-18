@@ -3,6 +3,8 @@
 
 # platform-mesh - upstream-images
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/platform-mesh/upstream-images/badge)](https://scorecard.dev/viewer/?uri=github.com/platform-mesh/upstream-images)
+
 ## Description
 
 This repository contains automation to build and push select images and charts from upstream open source projects.
