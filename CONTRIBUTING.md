@@ -43,6 +43,12 @@ All workflows are triggered manually via `workflow_dispatch` from the GitHub Act
 1. Trigger workflow to build new keycloak chart if the version has changed
 1. Trigger workflow to build new keycloak-ocm component
 
+## Generative AI
+
+If you use generative AI tools while preparing a contribution, you remain responsible for the correctness, safety, licensing, and maintainability of the submitted change.
+
+If you use Claude while contributing, do not assume it will automatically pick up this repository's `AGENTS.md`. Explicitly provide or reference `AGENTS.md` at the start of the session so Claude has the repository-specific instructions before it suggests or applies changes.
+
 ## Issues
 We use GitHub issues to track bugs. Please ensure your description is
 clear and includes sufficient instructions to reproduce the issue.
