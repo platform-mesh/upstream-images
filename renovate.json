@@ -1,0 +1,85 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "mergeConfidence:all-badges",
+    "local>platform-mesh/.github:renovate-config"
+  ],
+  "customDatasources": {
+    "bitnamiKeycloakCommits": {
+      "defaultRegistryUrlTemplate": "https://api.github.com/repos/bitnami/containers/commits?path=bitnami/keycloak/26/debian-12/Dockerfile&sha=main&per_page=1",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": $[0].sha}]}"
+      ]
+    },
+    "bitnamiKeycloakTagFromDockerfile": {
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/bitnami/containers/main/bitnami/keycloak/26/debian-12/Dockerfile",
+      "format": "plain",
+      "transformTemplates": [
+        "($app := $match($, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
+      ]
+    },
+    "bitnamiPostgresqlCommits": {
+      "defaultRegistryUrlTemplate": "https://api.github.com/repos/bitnami/containers/commits?path=bitnami/postgresql/18/debian-12/Dockerfile&sha=main&per_page=1",
+      "format": "json",
+      "transformTemplates": [
+        "{\"releases\":[{\"version\": $[0].sha}]}"
+      ]
+    },
+    "bitnamiPostgresqlTagFromDockerfile": {
+      "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/bitnami/containers/main/bitnami/postgresql/18/debian-12/Dockerfile",
+      "format": "plain",
+      "transformTemplates": [
+        "($app := $match($, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
+      ]
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Workflow image commit refs from bitnami/containers",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/build-keycloak\\.yaml$/",
+        "/(^|/)\\.github/workflows/build-postgresql\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+default:\\s*\"(?<currentValue>[a-f0-9]{40})\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Workflow image tags from Bitnami Dockerfile metadata",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/build-keycloak\\.yaml$/",
+        "/(^|/)\\.github/workflows/build-postgresql\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) versioning=(?<versioning>\\S+)\\s+default:\\s*\"(?<currentValue>[0-9][0-9.]*-debian-[0-9]+-r[0-9]+)\""
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group Keycloak workflow ref and tag updates",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        ".github/workflows/build-keycloak.yaml"
+      ],
+      "groupName": "keycloak workflow image defaults",
+      "commitMessageTopic": "keycloak workflow image defaults"
+    },
+    {
+      "description": "Group PostgreSQL workflow ref and tag updates",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        ".github/workflows/build-postgresql.yaml"
+      ],
+      "groupName": "postgresql workflow image defaults",
+      "commitMessageTopic": "postgresql workflow image defaults"
+    }
+  ]
+}
