@@ -9,10 +9,12 @@ on:
     inputs:
       keycloak_image_ref:
         description: "The commit hash of the keycloak image to be build"
+        # renovate: datasource=custom.bitnamiKeycloakCommits depName=bitnami/containers
         default: "411bc7189c51ca61415abecaf1be8ab13ab24592"
         required: true
       keycloak_image_tag:
         description: "The keycloak tag to be created"
+        # renovate: datasource=custom.bitnamiKeycloakTagFromDockerfile depName=bitnami/containers versioning=loose
         default: "26.5.2-debian-12-r0"
         required: true
       keycloak_image_context_path:

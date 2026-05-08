@@ -9,10 +9,12 @@ on:
     inputs:
       image_ref:
         description: "The commit hash of the image to be build"
+        # renovate: datasource=custom.bitnamiPostgresqlCommits depName=bitnami/containers
         default: "56273540e12af6a40bdef18bb52ff7c081a0fa5f"
         required: true
       image_tag:
         description: "The tag to be created"
+        # renovate: datasource=custom.bitnamiPostgresqlTagFromDockerfile depName=bitnami/containers versioning=loose
         default: "17.4.0-debian-12-r17"
         required: true
       image_context_path:
@@ -21,7 +23,7 @@ on:
         required: true
 
 env:
-  IMAGE_REF: ${{ github.event.inputs.image_ref || '56273540e12af6a40bdef18bb52ff7c081a0fa5f' }}
+  IMAGE_REF: ${{ github.event.inputs.image_ref }}
   IMAGE_TAG: ${{ github.event.inputs.image_tag || '17.4.0-debian-12-r17' }}
   IMAGE_CONTEXT_PATH: ${{ github.event.inputs.image_context_path || 'bitnami/postgresql/17/debian-12' }}
 
