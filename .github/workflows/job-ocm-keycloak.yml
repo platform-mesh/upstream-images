@@ -68,20 +68,17 @@ jobs:
     
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Setup OCM CLI
+      - name: Setup OCM CLI v0.39.0
         run: |
-          REPO=${repo:=open-component-model/ocm}
-          if [ -z "$version" -o "$version" == latest ]; then
-            version="$(basename "$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/$REPO/releases/latest)")"
-            echo "Selecting latest version: $version"
-          fi
-          VERSION=${version#v}
-          ARCHIVE_FILE="ocm-${VERSION}-linux-amd64.tar.gz"
-          URL="https://github.com/$REPO/releases/download/v${VERSION}/$ARCHIVE_FILE"
-          echo "Installing ocm-cli version $version from $REPO"
+          OCM_VERSION="0.39.0"
+          OCM_SHA256="421fb87130cd0c9320c2e65204eddfddaf39aa31580d5852ea84356df08b8a98"
+          ARCHIVE_FILE="ocm-${OCM_VERSION}-linux-amd64.tar.gz"
+          URL="https://github.com/open-component-model/ocm/releases/download/v${OCM_VERSION}/${ARCHIVE_FILE}"
+          echo "Installing ocm-cli version v${OCM_VERSION}"
           curl -LsS -o ocm-cli.tgz "$URL"
+          echo "${OCM_SHA256}  ocm-cli.tgz" | sha256sum -c -
           tar --overwrite -xvzf ocm-cli.tgz >/dev/null
           chmod a+x ocm
 

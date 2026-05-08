@@ -84,7 +84,6 @@ jobs:
       - name: Update chart dependencies
         env:
           GHCR_USER: ${{ github.actor }}
-          GHCR_PAT: ${{ secrets.GHCR_PAT }}
           CHART_NAMESPACE: ${{ env.CHART_NAMESPACE }}
         run: |
           chart_path="${{ needs.clone-chart.outputs.chart_path }}"
