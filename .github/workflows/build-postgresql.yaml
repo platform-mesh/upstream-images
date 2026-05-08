@@ -19,13 +19,13 @@ on:
         required: true
       image_context_path:
         description: "The path to the directory holding the dockerfile"
-        default: "bitnami/postgresql/17/debian-12"
+        default: "bitnami/postgresql/18/debian-12"
         required: true
 
 env:
   IMAGE_REF: ${{ github.event.inputs.image_ref }}
   IMAGE_TAG: ${{ github.event.inputs.image_tag || '17.4.0-debian-12-r17' }}
-  IMAGE_CONTEXT_PATH: ${{ github.event.inputs.image_context_path || 'bitnami/postgresql/17/debian-12' }}
+  IMAGE_CONTEXT_PATH: ${{ github.event.inputs.image_context_path || 'bitnami/postgresql/18/debian-12' }}
 
 
 jobs:
