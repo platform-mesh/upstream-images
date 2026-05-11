@@ -1,7 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "autoApprove": false,
-  "automerge": false,
   "extends": [
     "mergeConfidence:all-badges",
     "local>platform-mesh/.github:renovate-config"
