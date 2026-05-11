@@ -32,7 +32,13 @@ All workflows are triggered manually via `workflow_dispatch` from the GitHub Act
 
 ### 4. `build-postgresql`
 - Builds the postgresql image used in the keycloak chart.
-- You can lookup what commit to build by going to: https://github.com/bitnami/containers/commits/main/bitnami/postgresql/17/debian-12/Dockerfile
+- You can lookup what commit to build by going to: https://github.com/bitnami/containers/commits/main/bitnami/postgresql/18/debian-12/Dockerfile
+
+## Renovate-managed workflow defaults
+
+Commit refs (`keycloak_image_ref`, `image_ref`) and matching image tags
+(`keycloak_image_tag`, `image_tag`) in `.github/workflows/build-keycloak.yaml`
+and `.github/workflows/build-postgresql.yaml` are managed by Renovate.
 
 ## How to upgrade to a new keycloak version
 
