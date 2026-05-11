@@ -18,7 +18,7 @@
       "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/bitnami/containers/main/bitnami/keycloak/26/debian-12/Dockerfile",
       "format": "plain",
       "transformTemplates": [
-        "($app := $match($, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
+        "($content := $join(releases.version, \"\\n\"); $app := $match($content, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($content, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($content, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
       ]
     },
     "bitnamiPostgresqlCommits": {
@@ -32,7 +32,7 @@
       "defaultRegistryUrlTemplate": "https://raw.githubusercontent.com/bitnami/containers/main/bitnami/postgresql/18/debian-12/Dockerfile",
       "format": "plain",
       "transformTemplates": [
-        "($app := $match($, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
+        "($content := $join(releases.version, \"\\n\"); $app := $match($content, /APP_VERSION=\"([^\"]+)\"/)[0].groups[0]; $os := $match($content, /OS_FLAVOUR=\"([^\"]+)\"/)[0].groups[0]; $rev := $match($content, /IMAGE_REVISION=\"([^\"]+)\"/)[0].groups[0]; {\"releases\":[{\"version\": $app & \"-\" & $os & \"-r\" & $rev}]})"
       ]
     }
   },
