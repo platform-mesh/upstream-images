@@ -55,12 +55,14 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   ocm:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
     env:
       COMPONENT_NAME: ${{ inputs.componentName }}
       COMPONENT_CONSTRUCTOR_FILE: '.ocm/component-constructor-keycloak.yaml'
@@ -68,7 +70,7 @@ jobs:
     
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Setup OCM CLI
         run: |
