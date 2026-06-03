@@ -1,4 +1,9 @@
 name: Build chart only ocm component
+
+concurrency:
+  group: ocm-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -18,9 +23,16 @@ on:
         description: "Path to the ocm constructor"
         default: .ocm/component-constructor-chart-only.yaml
 
+permissions:
+  contents: read
+
 jobs:
   ocm:
+    name: Build OCM Component
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Needed to push the OCM artifacts to the registry
     env:
       CHART_OCI_PATH_INPUT: ${{ inputs.chartOCIPath || 'ghcr.io/platform-mesh/upstream-images/charts/keycloak:25.2.3' }}
       COMPONENT_NAME: ${{ inputs.componentName || 'github.com/platform-mesh/keycloak' }}
@@ -39,6 +51,8 @@ jobs:
 
       - name: Check out the repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Helm 3.17.2
         run: |
@@ -64,6 +78,9 @@ jobs:
           chmod a+x ocm
 
       - name: Write Credentials file
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENMFP_TOKEN: ${{ secrets.OPENMFP_PUBLISHER_TOKEN }} # zizmor: ignore[secrets-outside-env]
         run: |
           cat <<EOF > $HOME/.ocmconfig
           type: generic.config.ocm.software/v1
@@ -79,7 +96,7 @@ jobs:
                     - type: Credentials
                       properties:
                         username: github
-                        password: ${{ secrets.GITHUB_TOKEN }}
+                        password: ${REGISTRY_TOKEN}
                 - identity:
                     type: OCIRegistry
                     scheme: https
@@ -89,13 +106,15 @@ jobs:
                     - type: Credentials
                       properties:
                         username: github
-                        password: ${{ secrets.OPENMFP_PUBLISHER_TOKEN }}
+                        password: ${OPENMFP_TOKEN}
           EOF
 
       - name: Pull Helm Chart from GHCR
+        env:
+          GHCR_PAT: ${{ secrets.GHCR_PAT }} # zizmor: ignore[secrets-outside-env]
         run: |
           mkdir -p ./charts
-          echo "${{ secrets.GHCR_PAT }}" | helm registry login ghcr.io \
+          echo "${GHCR_PAT}" | helm registry login ghcr.io \
             --username github \
             --password-stdin
 
@@ -114,7 +133,7 @@ jobs:
           CHART_NAME=$(yq '.name' $CHART_PATH/Chart.yaml)
           VERSION=$(yq '.version' $CHART_PATH/Chart.yaml)
 
-          CHART_REPO=https://github.com/${{ github.repository }}
+          CHART_REPO=https://github.com/${GITHUB_REPOSITORY}
           ORG_REPO=$(echo "$IMAGE_NAME" | sed 's|ghcr.io/||')
           IMAGE_REPO_SHA=$(gh api repos/$ORG_REPO/git/ref/tags/$APP_VERSION 2>/dev/null | jq -r '.object.sha? // "null"') || echo "null"
 
@@ -130,16 +149,16 @@ jobs:
         run: |
           ocm_ctf=.ocm/transport.ctf
           mkdir -p "$(dirname "$ocm_ctf")"
-          ./ocm add components -c --templater=go --file "$ocm_ctf" "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
-            VERSION=${{ env.VERSION }} \
-            APP_VERSION=${{ env.APP_VERSION}} \
-            IMAGE_NAME=${{ env.IMAGE_NAME}} \
-            COMMIT=${{ github.sha }} \
-            IMAGE_REPO_SHA=${{ env.IMAGE_REPO_SHA }} \
-            CHART_REPO=${{ env.CHART_REPO }} \
+          ./ocm add components -c --templater=go --file "$ocm_ctf" "${COMPONENT_CONSTRUCTOR_FILE}" -- \
+            VERSION=${VERSION} \
+            APP_VERSION=${APP_VERSION} \
+            IMAGE_NAME=${IMAGE_NAME} \
+            COMMIT=${GITHUB_SHA} \
+            IMAGE_REPO_SHA=${IMAGE_REPO_SHA} \
+            CHART_REPO=${CHART_REPO} \
             COMPONENT_NAME=$COMPONENT_NAME \
-            CHART_OCI_PATH=${{ env.CHART_OCI_PATH }} \
-            LOCAL_CHART_PATH=${{ env.CHART_PATH}}
+            CHART_OCI_PATH=${CHART_OCI_PATH} \
+            LOCAL_CHART_PATH=${CHART_PATH}
 
       - name: Transfer to OCM REPO
-        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ env.OCM_REGISTRY_URL }}"
+        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${OCM_REGISTRY_URL}"

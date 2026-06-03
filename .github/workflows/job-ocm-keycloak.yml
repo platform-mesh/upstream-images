@@ -1,4 +1,9 @@
 name: Build keycloak ocm component
+
+concurrency:
+  group: ocm-keycloak-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     inputs:
@@ -58,11 +63,12 @@ permissions:
 
 jobs:
   ocm:
+    name: Build Keycloak OCM Component
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-      packages: write
+      packages: write # Needed to push the OCM artifacts to the registry
     env:
       COMPONENT_NAME: ${{ inputs.componentName }}
       COMPONENT_CONSTRUCTOR_FILE: '.ocm/component-constructor-keycloak.yaml'
@@ -71,6 +77,8 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup OCM CLI
         run: |
@@ -88,6 +96,8 @@ jobs:
           chmod a+x ocm
 
       - name: Write Credentials file
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cat <<EOF > $HOME/.ocmconfig
             type: generic.config.ocm.software/v1
@@ -103,27 +113,36 @@ jobs:
                       - type: Credentials
                         properties:
                           username: github
-                          password: ${{ secrets.GITHUB_TOKEN }}
+                          password: ${REGISTRY_TOKEN}
           EOF
 
       - name: Create OCM ComponentArchive
         run: |
           ocm_ctf=.ocm/transport.ctf
           mkdir -p "$(dirname "$ocm_ctf")"
-          ./ocm add components -c --templater=go --file "$ocm_ctf" "${{ env.COMPONENT_CONSTRUCTOR_FILE }}" -- \
-            IMAGE_VERSION=${{ inputs.imageVersion }} \
-            IMAGE_TAG=${{ inputs.imageTag }} \
-            IMAGE_NAME=${{ inputs.imageOCIPackagePath }} \
-            IMAGE_SOURCE_COMMIT=${{ inputs.imageSourceCommit }} \
-            CHART_VERSION=${{ inputs.chartVersion }} \
-            CHART_SOURCE_COMMIT=${{ inputs.chartSourceCommit }} \
-            COMPONENT_NAME=${{ env.COMPONENT_NAME }} \
-            KEYCLOAK_POSTGRESQL_IMAGE_VERSION=${{ inputs.keycloakPostgresqlImageVersion }} \
-            CHART_OCI_PATH=${{ inputs.chartOCIPackagePath }}
+          ./ocm add components -c --templater=go --file "$ocm_ctf" "${COMPONENT_CONSTRUCTOR_FILE}" -- \
+            IMAGE_VERSION=${IMAGE_VERSION} \
+            IMAGE_TAG=${IMAGE_TAG} \
+            IMAGE_NAME=${IMAGE_NAME} \
+            IMAGE_SOURCE_COMMIT=${IMAGE_SOURCE_COMMIT} \
+            CHART_VERSION=${CHART_VERSION} \
+            CHART_SOURCE_COMMIT=${CHART_SOURCE_COMMIT} \
+            COMPONENT_NAME=${COMPONENT_NAME} \
+            KEYCLOAK_POSTGRESQL_IMAGE_VERSION=${KEYCLOAK_POSTGRESQL_IMAGE_VERSION} \
+            CHART_OCI_PATH=${CHART_OCI_PATH}
+        env:
+          IMAGE_VERSION: ${{ inputs.imageVersion }}
+          IMAGE_TAG: ${{ inputs.imageTag }}
+          IMAGE_NAME: ${{ inputs.imageOCIPackagePath }}
+          IMAGE_SOURCE_COMMIT: ${{ inputs.imageSourceCommit }}
+          CHART_VERSION: ${{ inputs.chartVersion }}
+          CHART_SOURCE_COMMIT: ${{ inputs.chartSourceCommit }}
+          KEYCLOAK_POSTGRESQL_IMAGE_VERSION: ${{ inputs.keycloakPostgresqlImageVersion }}
+          CHART_OCI_PATH: ${{ inputs.chartOCIPackagePath }}
 
       - name: Print OCM Component
         run: ./ocm get components -o yaml .ocm/transport.ctf
 
       - name: Transfer to OCM REPO
         if: ${{ inputs.dryRun != true }}
-        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${{ env.OCM_REGISTRY_URL }}"
+        run: ./ocm transfer ctf --overwrite .ocm/transport.ctf "${OCM_REGISTRY_URL}"
