@@ -15,7 +15,7 @@ on:
       image_tag:
         description: "The tag to be created"
         # renovate: datasource=custom.bitnamiPostgresqlTagFromDockerfile depName=bitnami/containers versioning=loose
-        default: "17.4.0-debian-12-r17"
+        default: "18.3.0-debian-12-r16"
         required: true
       image_context_path:
         description: "The path to the directory holding the dockerfile"
